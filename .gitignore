@@ -1,0 +1,19 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+x64/
+*.obj
+*.exe
+*.ilk
+*.log
+*.tlog
+*.idb
+*.pdb
+*.ipch
+*.opendb
+*.VC.db
