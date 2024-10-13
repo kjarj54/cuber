@@ -3,17 +3,24 @@
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Image Example");
+ 
+    sf::RenderWindow window;
 
-    // Cargar la textura desde un archivo
+  
     sf::Texture texture;
     if (!texture.loadFromFile("Fondo.png"))
     {
         std::cerr << "Error: No se pudo cargar la imagen desde el archivo." << std::endl;
-        return -1; // Manejar el error si la imagen no se carga correctamente
+        return -1; 
     }
 
-    // Crear un sprite y asignarle la textura cargada
+
+    sf::Vector2u textureSize = texture.getSize();
+
+
+    window.create(sf::VideoMode(textureSize.x, textureSize.y), "SFML Image Example");
+
+
     sf::Sprite sprite;
     sprite.setTexture(texture);
 
@@ -27,7 +34,7 @@ int main()
         }
 
         window.clear();
-        window.draw(sprite); // Dibujar el sprite en la ventana
+        window.draw(sprite); 
         window.display();
     }
 
