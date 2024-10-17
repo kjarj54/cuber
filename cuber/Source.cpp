@@ -15,6 +15,7 @@ int main()
 {
     sf::RenderWindow window;
 
+    // Cargar la imagen de fondo
     sf::Texture texture;
     if (!texture.loadFromFile("Fondo.png"))
     {
@@ -23,12 +24,24 @@ int main()
     }
 
     sf::Vector2u textureSize = texture.getSize();
-    window.create(sf::VideoMode(textureSize.x, textureSize.y), "SFML Image Example");
+
+    // Definir el tamaño fijo de la ventana (puede ser 1280x720 o lo que prefieras)
+    const unsigned int fixedWidth = 1280;
+    const unsigned int fixedHeight = 720;
+
+    // Crear la ventana con el tamaño fijo
+    window.create(sf::VideoMode(fixedWidth, fixedHeight), "SFML Fixed Size Window", sf::Style::Close);
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
 
-    Graph graph(true); // true for directed graph
+    // Escalar la imagen de fondo para que se ajuste al tamaño de la ventana
+    sprite.setScale(
+        static_cast<float>(fixedWidth) / textureSize.x,
+        static_cast<float>(fixedHeight) / textureSize.y
+    );
+
+    Graph graph(true); // true para grafo dirigido
 
     // Leer los vértices desde el archivo
     ifstream verticesFile("vertices.txt");
@@ -56,7 +69,7 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
             else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                // Add a new node at the mouse position
+                // Agregar un nuevo nodo en la posición del mouse
                 sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                 string newNodeId = "Node" + std::to_string(graph.getVertices().size() + 1);
                 graph.addNode(newNodeId, static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
@@ -66,21 +79,24 @@ int main()
         window.clear();
         window.draw(sprite);
 
-        // Draw nodes
+        // Dibujar nodos (ajustados con el tamaño fijo de la ventana)
         for (auto& vertex : graph.getVertices()) {
             Node* node = graph.getNode(vertex);
             sf::CircleShape circle(5);
             circle.setFillColor(sf::Color::Red);
-            circle.setPosition(node->getX(), node->getY());
+            circle.setPosition(node->getX(), node->getY()); // Las coordenadas permanecen tal como están
             window.draw(circle);
         }
 
-        // Draw edges
+        // Dibujar aristas (ajustadas con el tamaño fijo de la ventana)
         for (auto& vertex : graph.getVertices()) {
             Node* node = graph.getNode(vertex);
             for (auto& neighbor : node->getNeighbors()) {
                 Node* neighborNode = graph.getNode(neighbor.first);
-                drawArrow(window, sf::Vector2f(node->getX() + 5, node->getY() + 5), sf::Vector2f(neighborNode->getX() + 5, neighborNode->getY() + 5), graph.isDirected());
+                drawArrow(window,
+                    sf::Vector2f(node->getX() + 5, node->getY() + 5),
+                    sf::Vector2f(neighborNode->getX() + 5, neighborNode->getY() + 5),
+                    graph.isDirected());
             }
         }
 
