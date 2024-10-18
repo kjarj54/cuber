@@ -43,7 +43,7 @@ int main()
 
     Graph graph(true); // true para grafo dirigido
 
-    // Leer los vértices desde el archivo
+    // Leer los vértices desde el archivo puntos.txt
     ifstream verticesFile("vertices.txt");
     if (!verticesFile.is_open()) {
         cerr << "Error: No se pudo abrir el archivo de vértices." << endl;
@@ -51,15 +51,23 @@ int main()
     }
 
     string line;
-    int nodeId = 1;
     while (getline(verticesFile, line)) {
         istringstream iss(line);
+        int id;
         float x, y;
-        if (!(iss >> x >> y)) { break; } // Error al leer la línea
-        string nodeName = "Node" + to_string(nodeId++);
+        char dot;
+        if (!(iss >> id >> dot >> x >> y)) { break; } // Error al leer la línea
+        string nodeName = "Node" + to_string(id);
         graph.addNode(nodeName, x, y);
     }
     verticesFile.close();
+
+    // Cargar la fuente para los números
+    sf::Font font;
+    if (!font.loadFromFile("arial.ttf")) {
+        cerr << "Error: No se pudo cargar la fuente arial.ttf." << endl;
+        return -1;
+    }
 
     while (window.isOpen())
     {
@@ -68,36 +76,27 @@ int main()
         {
             if (event.type == sf::Event::Closed)
                 window.close();
-            else if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                // Agregar un nuevo nodo en la posición del mouse
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-                string newNodeId = "Node" + std::to_string(graph.getVertices().size() + 1);
-                graph.addNode(newNodeId, static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
-            }
         }
 
         window.clear();
         window.draw(sprite);
 
-        // Dibujar nodos (ajustados con el tamaño fijo de la ventana)
+        // Dibujar los vértices
         for (auto& vertex : graph.getVertices()) {
             Node* node = graph.getNode(vertex);
-            sf::CircleShape circle(5);
-            circle.setFillColor(sf::Color::Red);
-            circle.setPosition(node->getX(), node->getY()); // Las coordenadas permanecen tal como están
-            window.draw(circle);
-        }
+            sf::CircleShape shape(10); // Radio del círculo más grande
+            shape.setFillColor(sf::Color::Red);
+            shape.setPosition(node->getX(), node->getY());
+            window.draw(shape);
 
-        // Dibujar aristas (ajustadas con el tamaño fijo de la ventana)
-        for (auto& vertex : graph.getVertices()) {
-            Node* node = graph.getNode(vertex);
-            for (auto& neighbor : node->getNeighbors()) {
-                Node* neighborNode = graph.getNode(neighbor.first);
-                drawArrow(window,
-                    sf::Vector2f(node->getX() + 5, node->getY() + 5),
-                    sf::Vector2f(neighborNode->getX() + 5, neighborNode->getY() + 5),
-                    graph.isDirected());
-            }
+            // Dibujar el ID del punto
+            sf::Text text;
+            text.setFont(font);
+            text.setString(to_string(stoi(node->getId().substr(4)))); // Extraer el ID numérico
+            text.setCharacterSize(14); // Tamaño del texto
+            text.setFillColor(sf::Color::Black);
+            text.setPosition(node->getX(), node->getY());
+            window.draw(text);
         }
 
         window.display();
