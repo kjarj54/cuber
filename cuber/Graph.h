@@ -6,19 +6,19 @@
 
 class Graph {
 private:
-	bool directed;
-	unordered_map<string, Node*> nodes;
+    bool directed;
+    unordered_map<string, Node*> nodes;
 public:
-	Graph();
+    Graph();
     Graph(bool directed);
-    void addNode( string& id, float x, float y);
-    void addEdge( string& src,  string& dest, double weight);
-    vector<string> getVertices() ;
-    vector<pair<string, double>> getNeighbors( string& vertex) ;
-    Node* getNode( string& id) ;
+    void addNode(string& id, float x, float y);
+    void addEdge(string& src, string& dest, double weight);
+    void addBidirectionalEdge(string& src, string& dest, double weight); // Nuevo método
+    vector<string> getVertices();
+    vector<pair<string, double>> getNeighbors(string& vertex);
+    Node* getNode(string& id);
     bool isDirected();
-	~Graph();
+    ~Graph();
 };
-
 
 #endif // GRAPH_H
