@@ -9,7 +9,6 @@
 
 using namespace std;
 
-void drawArrow(sf::RenderWindow& window, sf::Vector2f start, sf::Vector2f end, bool directed) {/*...*/ }
 
 int main()
 {
