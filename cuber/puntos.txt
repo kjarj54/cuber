@@ -1,247 +1,319 @@
 Punto 1:
-Vecinos: [2, 4]
-Calle Doble Sentido: [(2, True), (4, False)]
+Vecinos: [2,23]
+Calle Doble Sentido: [(2, True), (23, True)]
 
 Punto 2:
-Vecinos: [1, 3, 4]
-Calle Doble Sentido: [(1, True), (3, True), (4, False)]
+Vecinos: [1, 3, 79]
+Calle Doble Sentido: [(1, True), (3, True), (79, True)]
 
 Punto 3:
-Vecinos: [2, 6]
-Calle Doble Sentido: [(2, True), (6, True)]
+Vecinos: [2, 78, 7]
+Calle Doble Sentido: [(2, True), (78, True),(7, True)]
 
 Punto 4:
-Vecinos: [1, 2, 5, 26]
-Calle Doble Sentido: [(1, False), (2, False), (5, True), (26, False)]
+Vecinos: [5]
+Calle Doble Sentido: [(5, True)]
 
 Punto 5:
 Vecinos: [4, 26, 25]
-Calle Doble Sentido: [(4, True), (26, True), (25, False)]
+Calle Doble Sentido: [(4, True), (26, True), (25, True)]
 
 Punto 6:
-Vecinos: [3, 7, 28]
-Calle Doble Sentido: [(3, True), (7, True), (28, False)]
+Vecinos: [27, 7, 28, 76]
+Calle Doble Sentido: [(27, True), (7, True), (28, True), (76, True)]
 
 Punto 7:
-Vecinos: [6, 9, 12]
-Calle Doble Sentido: [(6, True), (9, False), (12, True)]
+Vecinos: [6, 3, 29]
+Calle Doble Sentido: [(6, True), (3, True), (29, True)]
 
 Punto 8:
-Vecinos: [9]
-Calle Doble Sentido: [(9, True)]
+Vecinos: [30, 11, 32]
+Calle Doble Sentido: [(30, True),(11, True),(32, False)]
 
 Punto 9:
-Vecinos: [7, 8, 10, 11]
-Calle Doble Sentido: [(7, False), (8, True), (10, True), (11, False)]
+Vecinos: [78, 8, 10]
+Calle Doble Sentido: [(78, True), (8, False), (10, True)]
 
 Punto 10:
-Vecinos: [9]
-Calle Doble Sentido: [(9, True)]
+Vecinos: [9, 13]
+Calle Doble Sentido: [(9, True), (13, True)]
 
 Punto 11:
-Vecinos: [9, 12]
-Calle Doble Sentido: [(9, False), (12, False)]
+Vecinos: [10, 8]
+Calle Doble Sentido: [(10, False), (8, True)]
 
 Punto 12:
-Vecinos: [7, 11, 13]
-Calle Doble Sentido: [(7, True), (11, False), (13, False)]
+Vecinos: [13]
+Calle Doble Sentido: [(13, True)]
 
 Punto 13:
-Vecinos: [12, 14, 16]
-Calle Doble Sentido: [(12, False), (14, True), (16, True)]
+Vecinos: [12, 14, 10]
+Calle Doble Sentido: [(12, True), (14, True), (10, True)]
 
 Punto 14:
-Vecinos: [13, 15]
-Calle Doble Sentido: [(13, True), (15, True)]
+Vecinos: [13, 15, 71]
+Calle Doble Sentido: [(13, True), (15, True), (71, True)]
 
 Punto 15:
-Vecinos: [14, 16]
-Calle Doble Sentido: [(14, True), (16, False)]
+Vecinos: [14, 16, 17]
+Calle Doble Sentido: [(14, True), (16, True), (17, True)]
 
 Punto 16:
-Vecinos: [13, 15, 17]
-Calle Doble Sentido: [(13, True), (15, False), (17, False)]
+Vecinos: [18, 15, 17]
+Calle Doble Sentido: [(13, True), (15, True), (17, True)]
 
 Punto 17:
-Vecinos: [16, 18]
-Calle Doble Sentido: [(16, False), (18, True)]
+Vecinos: [16, 15, 70]
+Calle Doble Sentido: [(16, False), (18, True),(16, False)]
 
 Punto 18:
-Vecinos: [17]
-Calle Doble Sentido: [(17, True)]
+Vecinos: [16, 72]
+Calle Doble Sentido: [(16, True), (72, True)]
 
 Punto 19:
-Vecinos: [20]
-Calle Doble Sentido: [(20, True)]
+Vecinos: [57, 53, 75]
+Calle Doble Sentido: [(57, False), (53, True), (75, True)]
 
 Punto 20:
-Vecinos: [19, 21]
-Calle Doble Sentido: [(19, True), (21, False)]
+Vecinos: [51, 21]
+Calle Doble Sentido: [(51, True), (21, True)]
 
 Punto 21:
-Vecinos: [20, 22, 25]
-Calle Doble Sentido: [(20, False), (22, True), (25, True)]
+Vecinos: [20, 49]
+Calle Doble Sentido: [(20, True), (49, False)]
 
 Punto 22:
-Vecinos: [21, 23]
-Calle Doble Sentido: [(21, True), (23, True)]
+Vecinos: [21, 23, 45]
+Calle Doble Sentido: [(21, False), (23, True), (45, True)]
 
 Punto 23:
-Vecinos: [22, 24]
-Calle Doble Sentido: [(22, True), (24, True)]
+Vecinos: [22, 24, 1]
+Calle Doble Sentido: [(22, True), (24, True), (1, True)]
 
 Punto 24:
-Vecinos: [23, 25]
-Calle Doble Sentido: [(23, True), (25, False)]
+Vecinos: [5, 43]
+Calle Doble Sentido: [(5, True), (43, True)]
 
 Punto 25:
-Vecinos: [5, 24, 26]
-Calle Doble Sentido: [(5, False), (24, True), (26, True)]
+Vecinos: [38, 26]
+Calle Doble Sentido: [(38, True), (26, True)]
 
 Punto 26:
-Vecinos: [4, 5, 25, 27]
-Calle Doble Sentido: [(4, False), (5, False), (25, True), (27, False)]
+Vecinos: [5, 25, 27]
+Calle Doble Sentido: [(5, True), (25, True), (27, True)]
 
 Punto 27:
-Vecinos: [26, 28]
-Calle Doble Sentido: [(26, False), (28, True)]
+Vecinos: [26, 38, 6, 31]
+Calle Doble Sentido: [(26, True), (38, True), (6, True), (31, True)]
 
 Punto 28:
-Vecinos: [6, 27]
-Calle Doble Sentido: [(6, False), (27, True)]
+Vecinos: [6]
+Calle Doble Sentido: [(6, True)]
 
 Punto 29:
-Vecinos: [30, 27]
-Calle Doble Sentido: [(30, True), (27, False)]
+Vecinos: [7]
+Calle Doble Sentido: [(7, True)]
 
 Punto 30:
-Vecinos: [29, 31]
-Calle Doble Sentido: [(29, True), (31, False)]
+Vecinos: [78, 76, 8]
+Calle Doble Sentido: [(78, True), (76, True), (8, True)]
 
 Punto 31:
-Vecinos: [30, 32]
-Calle Doble Sentido: [(30, False), (32, True)]
+Vecinos: [76, 32, 37, 27]
+Calle Doble Sentido: [(76, True), (32, False), (37, True), (27, True)]
 
 Punto 32:
-Vecinos: [31, 33, 76]
-Calle Doble Sentido: [(31, True), (33, False), (76, False)]
+Vecinos: [33, 36]
+Calle Doble Sentido: [(33, False), (36, False)]
 
 Punto 33:
-Vecinos: [32, 34]
-Calle Doble Sentido: [(32, False), (34, True)]
+Vecinos: [11, 66]
+Calle Doble Sentido: [(11, False), (66, False)]
 
 Punto 34:
-Vecinos: [33, 35]
-Calle Doble Sentido: [(33, True), (35, True)]
+Vecinos: [33, 65]
+Calle Doble Sentido: [(33, False), (65, True)]
 
 Punto 35:
 Vecinos: [34, 36]
-Calle Doble Sentido: [(34, True), (36, True)]
+Calle Doble Sentido: [(34, False), (36, False)]
 
 Punto 36:
-Vecinos: [35, 37]
-Calle Doble Sentido: [(35, True), (37, False)]
+Vecinos: [37, 40]
+Calle Doble Sentido: [(37, False), (40, False)]
 
 Punto 37:
-Vecinos: [36, 38]
-Calle Doble Sentido: [(36, False), (38, True)]
+Vecinos: [38, 31, 41]
+Calle Doble Sentido: [(38, True), (31, True), (41, True)]
 
 Punto 38:
-Vecinos: [37, 39]
-Calle Doble Sentido: [(37, True), (39, True)]
+Vecinos: [37, 25, 27]
+Calle Doble Sentido: [(37, True), (25, True), (27, True)]
 
 Punto 39:
-Vecinos: [38, 40]
-Calle Doble Sentido: [(38, True), (40, True)]
+Vecinos: [41, 47]
+Calle Doble Sentido: [(41, True), (47, True)]
 
 Punto 40:
-Vecinos: [39, 41]
-Calle Doble Sentido: [(39, True), (41, False)]
+Vecinos: [58]
+Calle Doble Sentido: [(58, False)]
 
 Punto 41:
-Vecinos: [40, 42]
-Calle Doble Sentido: [(40, False), (42, True)]
+Vecinos: [40, 37, 39]
+Calle Doble Sentido: [(40, False), (37, True), (39, True)]
 
 Punto 42:
-Vecinos: [41, 43]
-Calle Doble Sentido: [(41, True), (43, True)]
+Vecinos: [46, 39]
+Calle Doble Sentido: [(46, False), (39, False)]
 
 Punto 43:
-Vecinos: [42, 44]
-Calle Doble Sentido: [(42, True), (44, True)]
+Vecinos: [42, 44, 24]
+Calle Doble Sentido: [(42, False), (44, True), (24, True)]
 
 Punto 44:
 Vecinos: [43, 45]
-Calle Doble Sentido: [(43, True), (45, False)]
+Calle Doble Sentido: [(43, True), (45, True)]
 
 Punto 45:
-Vecinos: [44, 46]
-Calle Doble Sentido: [(44, False), (46, True)]
+Vecinos: [44, 77]
+Calle Doble Sentido: [(44, True), (77, False)]
 
 Punto 46:
-Vecinos: [45, 47]
-Calle Doble Sentido: [(45, True), (47, True)]
+Vecinos: [45, 50]
+Calle Doble Sentido: [(45, False), (47, False)]
 
 Punto 47:
-Vecinos: [46, 48]
-Calle Doble Sentido: [(46, True), (48, False)]
+Vecinos: [39, 55, 46]
+Calle Doble Sentido: [(39, True), (55, False), (46, False)]
 
 Punto 48:
-Vecinos: [47, 49]
-Calle Doble Sentido: [(47, False), (49, True)]
+Vecinos: [47, 56]
+Calle Doble Sentido: [(47, False), (56, False)]
 
 Punto 49:
-Vecinos: [48, 50]
-Calle Doble Sentido: [(48, True), (50, True)]
+Vecinos: [77, 51]
+Calle Doble Sentido: [(77, False), (51, True)]
 
 Punto 50:
-Vecinos: [49, 51]
-Calle Doble Sentido: [(49, True), (51, False)]
+Vecinos: [55]
+Calle Doble Sentido: [(55, False)]
 
 Punto 51:
-Vecinos: [50, 52]
-Calle Doble Sentido: [(50, False), (52, True)]
+Vecinos: [20, 52, 49]
+Calle Doble Sentido: [(20, True), (52, True), (49, True)]
 
 Punto 52:
 Vecinos: [51, 53]
 Calle Doble Sentido: [(51, True), (53, True)]
 
 Punto 53:
-Vecinos: [52, 54]
-Calle Doble Sentido: [(52, True), (54, True)]
+Vecinos: [52, 19]
+Calle Doble Sentido: [(52, True), (19, True)]
 
 Punto 54:
-Vecinos: [53, 55]
-Calle Doble Sentido: [(53, True), (55, True)]
+Vecinos: [52]
+Calle Doble Sentido: [(53, False)]
 
 Punto 55:
 Vecinos: [54, 56]
-Calle Doble Sentido: [(54, True), (56, False)]
+Calle Doble Sentido: [(54, False), (56, False)]
 
 Punto 56:
-Vecinos: [55, 57]
-Calle Doble Sentido: [(55, False), (57, True)]
+Vecinos: [53]
+Calle Doble Sentido: [(53, False)]
 
 Punto 57:
-Vecinos: [56, 58]
-Calle Doble Sentido: [(56, True), (58, True)]
+Vecinos: [59, 48]
+Calle Doble Sentido: [(59, False), (48, False)]
 
 Punto 58:
-Vecinos: [57, 59]
-Calle Doble Sentido: [(57, True), (59, True)]
+Vecinos: [48, 59]
+Calle Doble Sentido: [(48, False), (59, False)]
 
 Punto 59:
-Vecinos: [58, 60]
-Calle Doble Sentido: [(58, True), (60, False)]
+Vecinos: [35, 61]
+Calle Doble Sentido: [(35, False), (61, False)]
 
 Punto 60:
-Vecinos: [59, 61]
-Calle Doble Sentido: [(59, False), (61, True)]
+Vecinos: [63]
+Calle Doble Sentido: [(63, False)]
 
 Punto 61:
-Vecinos: [60, 62]
-Calle Doble Sentido: [(60, True), (62, True)]
+Vecinos: [63, 62]
+Calle Doble Sentido: [(60, False), (62, False)]
 
 Punto 62:
-Vecinos: [61, 63]
-Calle Doble Sentido: [(61,
+Vecinos: [60]
+Calle Doble Sentido: [(60, False)]
+
+Punto 63:
+Vecinos: [64, 67]
+Calle Doble Sentido: [(64, False), (67, False)]
+
+Punto 64:
+Vecinos: [65, 68, 35]
+Calle Doble Sentido: [(65, True), (68, False), (35, False)]
+
+Punto 65:
+Vecinos: [34, 64]
+Calle Doble Sentido: [(34, True), (64, True)]
+
+Punto 66:
+Vecinos: [65, 71]
+Calle Doble Sentido: [(65, False), (71, False)]
+
+Punto 67:
+Vecinos: [68, 74]
+Calle Doble Sentido: [(68, True), (74, False)]
+
+Punto 68:
+Vecinos: [67, 69]
+Calle Doble Sentido: [(67, True), (69, True)]
+
+Punto 69:
+Vecinos: [68, 70]
+Calle Doble Sentido: [(68, True), (70, True)]
+
+Punto 70:
+Vecinos: [71, 17, 69, 72]
+Calle Doble Sentido: [(71, True), (17, True), (69, True), (72, True)]
+
+Punto 71:
+Vecinos: [14, 70]
+Calle Doble Sentido: [(14, True), (70, True)]
+
+Punto 72:
+Vecinos: [70, 18, 73]
+Calle Doble Sentido: [(70, True), (18, True), (73, True)]
+
+Punto 73:
+Vecinos: [68, 72, 74]
+Calle Doble Sentido: [(68, False), (72, True), (74, True)]
+
+Punto 74:
+Vecinos: [67, 73, 75]
+Calle Doble Sentido: [(67, False), (73, True), (75, True)]
+
+Punto 75:
+Vecinos: [74, 19, 80]
+Calle Doble Sentido: [(74, True), (19, True), (80, False)]
+
+Punto 76:
+Vecinos: [30, 6]
+Calle Doble Sentido: [(30, True), (6, True)]
+
+Punto 77:
+Vecinos: [50]
+Calle Doble Sentido: [(50, False)]
+
+Punto 78:
+Vecinos: [30, 3, 9]
+Calle Doble Sentido: [(30, True), (3, True), (9, True)]
+
+Punto 79:
+Vecinos: [2]
+Calle Doble Sentido: [(2, True)]
+
+Punto 80:
+Vecinos: [60, 57]
+Calle Doble Sentido: [(60, False), (57, False)]
