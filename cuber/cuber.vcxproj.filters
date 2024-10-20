@@ -49,5 +49,8 @@
     <Text Include="vertices.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="puntos.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

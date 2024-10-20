@@ -143,8 +143,8 @@
     <ClInclude Include="Node.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="vertices.txt" />
     <Text Include="puntos.txt" />
+    <Text Include="vertices.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
