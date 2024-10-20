@@ -15,8 +15,8 @@ Vecinos: [5]
 Calle Doble Sentido: [(5, True)]
 
 Punto 5:
-Vecinos: [4, 26, 25]
-Calle Doble Sentido: [(4, True), (26, True), (25, True)]
+Vecinos: [4, 26]
+Calle Doble Sentido: [(4, True), (26, True)]
 
 Punto 6:
 Vecinos: [27, 7, 28, 76]
