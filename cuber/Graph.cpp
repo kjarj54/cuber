@@ -50,6 +50,16 @@ bool Graph::isDirected() {
     return directed;
 }
 
+int Graph::getTotalCost(vector<double> wayCost, int costPerWeigth) {
+    
+    double total = 0;
+    for (double c : wayCost) {
+
+        total += c;
+    }
+    return total * costPerWeigth;
+}
+
 Graph::~Graph() {
     for (auto it = this->nodes.begin(); it != this->nodes.end(); it++) {
         delete it->second;

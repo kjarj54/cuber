@@ -18,6 +18,7 @@ public:
     vector<pair<string, double>> getNeighbors(string& vertex);
     Node* getNode(string& id);
     bool isDirected();
+    int getTotalCost(vector<double> wayCost, int costPerWeigth);
     ~Graph();
 };
 

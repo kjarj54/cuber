@@ -158,6 +158,34 @@ void openMenuWindow()
         menuWindow.display();
     }
 }
+void drawPath(sf::RenderWindow& window, Graph& graph, vector<string>& path) {
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        Node* node = graph.getNode(path[i]);
+        Node* nextNode = graph.getNode(path[i + 1]);
+
+        // Calcular la posición y el ángulo de la línea
+        sf::Vector2f start(node->getX(), node->getY());
+        sf::Vector2f end(nextNode->getX(), nextNode->getY());
+        sf::Vector2f direction = end - start;
+
+        // Calcular la longitud de la línea
+        float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+
+        // Crear un rectángulo para representar la línea ancha
+        sf::RectangleShape line(sf::Vector2f(length, 5)); // Ajusta el segundo parámetro para el grosor deseado
+        line.setFillColor(sf::Color::Green);
+
+        // Establecer la posición y rotación
+        line.setPosition(start);
+        line.setRotation(atan2(direction.y, direction.x) * 180 / 3.14159265f); // Convierte de radianes a grados
+
+        window.draw(line);
+    }
+}
+
+
+
+
 
 int main()
 {
@@ -182,7 +210,6 @@ int main()
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
-
     // Escalar la imagen de fondo para que se ajuste al tamaño de la ventana
     sprite.setScale(
         static_cast<float>(fixedWidth) / textureSize.x,
@@ -197,18 +224,23 @@ int main()
     // Leer los vecinos desde el archivo puntos.txt
     loadGraphFromFile(graph, "puntos.txt");
 
+    // Crear una instancia de Dijkstra y calcular la ruta
+    Dijkstra dijkstra(&graph);
+    string startNode = "Node1"; // Nodo inicial (cámbialo según tus necesidades)
+    string endNode = "Node10";  // Nodo final (cámbialo según tus necesidades)
+    vector<string> path = dijkstra.shortestPath(startNode, endNode);
+
     // Cargar la fuente para los números
     sf::Font font;
     if (!font.loadFromFile("arial.ttf")) {
         cerr << "Error: No se pudo cargar la fuente arial.ttf." << endl;
         return -1;
     }
+
     // Crear botón para abrir el menú
     sf::RectangleShape menuButton(sf::Vector2f(100, 50));
     menuButton.setFillColor(sf::Color::Green);
     menuButton.setPosition(fixedWidth - 110, 10); // Posición en la esquina superior derecha
-
-
 
     while (window.isOpen())
     {
@@ -230,7 +262,11 @@ int main()
         window.clear();
         window.draw(sprite);
 
+        // Dibujar el grafo completo
         drawGraph(window, graph, font);
+
+        // Dibujar la ruta específica en azul
+        drawPath(window, graph, path);
 
         // Dibujar botón de menú
         window.draw(menuButton);
