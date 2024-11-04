@@ -30,6 +30,9 @@
     <ClCompile Include="Floyd.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Incident.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graph.h">

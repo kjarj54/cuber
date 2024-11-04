@@ -18,6 +18,8 @@ public:
     vector<pair<string, double>> getNeighbors(string& vertex);
     Node* getNode(string& id);
     bool isDirected();
+    bool isDirectNeighbor(const std::string& src, const std::string& dest);
+    bool isDoubleWay(const std::string& src, const std::string& dest);
     int getTotalCost(vector<double> wayCost, int costPerWeigth);
     ~Graph();
 };
