@@ -210,6 +210,37 @@ string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) 
     return "";
 }
 
+
+float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop) {
+    float totalCost = 0.0f;
+
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        Node* currentNode = graph.getNode(path[i]);
+        Node* nextNode = graph.getNode(path[i + 1]);
+
+        sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
+        sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
+
+        // Calcular la distancia/peso entre los nodos
+        float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2));
+        float weightCost = distance * costPerWeight;
+
+        // Agregar el costo de detención para el nodo actual
+        float stopCost = costPerStop;
+
+        // Sumar los costos de peso y detención al costo total
+        totalCost += weightCost + stopCost;
+    }
+
+    // Agregar el costo de detención para el último nodo (si es necesario)
+    totalCost += costPerStop;
+
+    return totalCost;
+}
+
+
+
+
 int main() {
     sf::RenderWindow window;
     sf::Texture texture;
@@ -235,16 +266,16 @@ int main() {
     loadGraphFromFile(graph, "puntos.txt");
 
     Dijkstra dijkstra(&graph);
-    FloydWarshall floydWarshall(&graph);  
+    FloydWarshall floydWarshall(&graph);
     sf::Font font;
     if (!font.loadFromFile("arial.ttf")) {
-        cerr << "Error: No se pudo cargar la fuente arial.ttf." << endl;
+        std::cerr << "Error: No se pudo cargar la fuente arial.ttf." << std::endl;
         return -1;
     }
 
     sf::Texture carTexture;
     if (!carTexture.loadFromFile("carro.png")) {
-        cerr << "Error: No se pudo cargar la imagen del carro." << endl;
+        std::cerr << "Error: No se pudo cargar la imagen del carro." << std::endl;
         return -1;
     }
     sf::Sprite carSprite(carTexture);
@@ -256,17 +287,13 @@ int main() {
     size_t pathIndex = 0;
     bool animateCar = false;
 
-    // Variables para selección de algoritmo
     enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
     Algorithm selectedAlgorithm = DIJKSTRA;
-
-    FloydWarshall floyd(&graph);
 
     sf::Text costText("Costo total: $0.0", font, 20);
     costText.setFillColor(sf::Color::Black);
     costText.setPosition(500, fixedHeight - 50);
 
-    // Botones para seleccionar el algoritmo
     sf::RectangleShape dijkstraButton(sf::Vector2f(150, 50));
     dijkstraButton.setFillColor(sf::Color::Green);
     dijkstraButton.setPosition(10, fixedHeight - 60);
@@ -291,6 +318,9 @@ int main() {
     startText.setFillColor(sf::Color::Black);
     startText.setPosition(350, fixedHeight - 50);
 
+    float costPerWeight = 0.5f; // Valor por unidad de distancia
+    float costPerStop = 1.0f;   // Valor por cada nodo de detención
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -301,17 +331,14 @@ int main() {
                 float mouseX = event.mouseButton.x;
                 float mouseY = event.mouseButton.y;
 
-                // Detectar si se selecciona el botón de Dijkstra
                 if (dijkstraButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     selectedAlgorithm = DIJKSTRA;
                     std::cout << "Algoritmo Dijkstra seleccionado" << std::endl;
                 }
-                // Detectar si se selecciona el botón de Floyd-Warshall
                 else if (floydButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     selectedAlgorithm = FLOYD_WARSHALL;
                     std::cout << "Algoritmo Floyd-Warshall seleccionado" << std::endl;
                 }
-                // Detectar si se selecciona el botón de Iniciar
                 else if (startButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
@@ -323,30 +350,15 @@ int main() {
                         pathIndex = 0;
                         animateCar = true;
 
-                        // Inicializar la posición del carro al primer nodo en la ruta más corta
                         if (!shortestPath.empty()) {
                             Node* startNode = graph.getNode(shortestPath[0]);
                             carSprite.setPosition(startNode->getX(), startNode->getY());
                         }
 
-
-                        totalTransportCost = 0.0f;
-                        for (size_t i = 0; i < shortestPath.size() - 1; ++i) {
-                            Node* currentNode = graph.getNode(shortestPath[i]);
-                            Node* nextNode = graph.getNode(shortestPath[i + 1]);
-
-                            sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
-                            sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
-
-                            float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2));
-                            float weightCost = distance * costPerWeight;
-                            totalTransportCost += weightCost + costPerStop;
-                        }
-
+                        float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
                         costText.setString("Costo total: $" + std::to_string(totalTransportCost));
                     }
                 }
-                // Selección de nodos de inicio y fin
                 else {
                     string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
 
@@ -367,44 +379,34 @@ int main() {
         }
 
         window.clear();
-        window.draw(sprite); // Fondo
-
-        // Dibujar el grafo
+        window.draw(sprite);
         drawGraph(window, graph, font);
 
-        // Dibujar la ruta más corta si está disponible
         if (!shortestPath.empty()) {
             drawShortestPath(window, graph, shortestPath);
 
-            // Animación del carro a lo largo de la ruta más corta
             if (animateCar && pathIndex < shortestPath.size() - 1) {
                 Node* currentNode = graph.getNode(shortestPath[pathIndex]);
                 Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
 
-                // Posición actual y la posición del próximo nodo
                 sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
                 sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
                 sf::Vector2f direction = nextPos - currentPos;
 
-                // Normalizar dirección
                 float distance = sqrt(direction.x * direction.x + direction.y * direction.y);
                 if (distance != 0) direction /= distance;
 
-                // Mover el carro hacia el siguiente nodo en la ruta
-                carSprite.move(direction * 2.0f); // Velocidad de movimiento
+                carSprite.move(direction * 2.0f);
 
-                // Revisar si el carro ha llegado al nodo siguiente
                 if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
                     pathIndex++;
-                    carSprite.setPosition(nextPos); // Alinear exactamente al nodo siguiente
+                    carSprite.setPosition(nextPos);
                 }
             }
 
-            // Dibujar el carro en su posición actual
             window.draw(carSprite);
         }
 
-        // Dibujar botones y etiquetas de texto
         window.draw(dijkstraButton);
         window.draw(floydButton);
         window.draw(startButton);
@@ -415,7 +417,6 @@ int main() {
 
         window.display();
     }
-
 
     return 0;
 }

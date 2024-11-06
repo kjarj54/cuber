@@ -72,3 +72,25 @@ std::vector<std::string> FloydWarshall::getShortestPath(const std::string& start
     path.push_back(indexNode[v]);
     return path;
 }
+
+double FloydWarshall::calculateTransportCost(const std::string& start, const std::string& end, double costPerWeight, double costPerStop) {
+    int u = nodeIndex[start];
+    int v = nodeIndex[end];
+
+    if (nextNode[u][v] == -1) {
+        std::cerr << "No existe un camino entre los nodos " << start << " y " << end << std::endl;
+        return std::numeric_limits<double>::infinity(); // Camino no disponible
+    }
+
+    double totalCost = 0.0;
+    while (u != v) {
+        int next = nextNode[u][v];
+        double edgeWeight = distMatrix[u][next];
+        totalCost += edgeWeight * costPerWeight; // Costo por peso
+        totalCost += costPerStop; // Costo adicional por detenerse en el nodo
+        u = next;
+    }
+
+    return totalCost;
+}
+
