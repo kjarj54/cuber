@@ -69,12 +69,11 @@ bool Graph::isDirected() {
 }
 
 
-int Graph::getTotalCost(const vector<double>& wayCost, int costPerWeight) {
 // Verifica si 'dest' es vecino directo de 'src'
 bool Graph::isDirectNeighbor(const std::string& src, const std::string& dest) {
     if (nodes.find(src) != nodes.end()) {
         for (const auto& neighbor : nodes[src]->getNeighbors()) {
-            if (neighbor.first == dest) {
+            if (get<0>(neighbor) == dest) {
                 return true;
             }
         }
@@ -91,9 +90,7 @@ bool Graph::isDoubleWay(const std::string& src, const std::string& dest) {
     return false;
 }
 
-int Graph::getTotalCost(vector<double> wayCost, int costPerWeigth) {
-    
-
+int Graph::getTotalCost(const vector<double>& wayCost, int costPerWeight) {
     double total = 0;
     for (double c : wayCost) {
         total += c;

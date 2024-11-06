@@ -6,20 +6,17 @@
 #include "Dijkstra.h"
 #include "Floyd.h"
 #include <string>
+#include "Incident.cpp"
 #include <deque>
 #include <algorithm>
 #include <iomanip>
-#include "Incident.cpp"
-
 
 using namespace std;
-const float costPerWeight = 0.01f;
-const float costPerStop = 0.01f;
-float totalTransportCost = 0.0f;    
-
 
 std::vector<Incident> incidents;
-
+const float costPerWeight = 0.01f;
+const float costPerStop = 0.01f;
+float totalTransportCost = 0.0f;
 
 void loadVerticesFromFile(Graph& graph, const string& filename) {
     ifstream file(filename);
@@ -185,32 +182,6 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
 }
 
 
-
-
-void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
-    for (size_t i = 0; i < path.size() - 1; ++i) {
-        Node* node = graph.getNode(path[i]);
-        Node* nextNode = graph.getNode(path[i + 1]);
-
-        sf::Vertex line[] = {
-            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Green),
-            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), sf::Color::Green)
-        };
-        window.draw(line, 2, sf::Lines);
-    }
-}
-
-string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
-    for (const auto& vertex : graph.getVertices()) {
-        Node* node = graph.getNode(vertex);
-        float nodeX = node->getX();
-        float nodeY = node->getY();
-
-        float distance = sqrt(pow(x - nodeX, 2) + pow(y - nodeY, 2));
-
-        if (distance <= radius) {
-            return vertex;
-
 // Función para abrir la ventana de incidentes y añadir uno nuevo
 void openIncidentWindow(Graph& graph) {
     sf::RenderWindow incidentWindow(sf::VideoMode(400, 400), "Reportar Incidente", sf::Style::Titlebar | sf::Style::Close);
@@ -243,7 +214,7 @@ void openIncidentWindow(Graph& graph) {
     sf::Text fromText("", font, 14);
     fromText.setPosition(125, 53);
     fromText.setFillColor(sf::Color::Black);
-    
+
 
     sf::Text toLabel("Hasta Punto:", font, 14);
     toLabel.setPosition(20, 90);
@@ -258,7 +229,7 @@ void openIncidentWindow(Graph& graph) {
     sf::Text toText("", font, 14);
     toText.setPosition(125, 93);
     toText.setFillColor(sf::Color::Black);
-    
+
 
     // Configuración de los botones para tipo de incidente
     sf::Text incidentTypeLabel("Tipo de Incidente:", font, 14);
@@ -429,7 +400,7 @@ void openIncidentWindow(Graph& graph) {
         incidentWindow.draw(coseviText);
         incidentWindow.draw(accidentButton);
         incidentWindow.draw(accidentText);
-        
+
         if (showDirectionOptions) {
             incidentWindow.draw(dir1Button);
             incidentWindow.draw(dir1Text);
@@ -439,7 +410,7 @@ void openIncidentWindow(Graph& graph) {
 
         incidentWindow.draw(confirmButtonText);
         incidentWindow.draw(confirmButton);
-        
+
         incidentWindow.display();
     }
 }
@@ -488,7 +459,7 @@ void openMenuWindow(Graph& graph) {
     sf::Text inputA("", font, 14);
     inputA.setPosition(105, 23);  // Posición ajustada para centrar el texto dentro del cuadro
     inputA.setFillColor(sf::Color::Black);
-    
+
 
     sf::Text inputB("", font, 14);
     inputB.setPosition(105, 63);  // Posición ajustada para centrar el texto dentro del cuadro
@@ -595,15 +566,7 @@ void openMenuWindow(Graph& graph) {
                     inputB.setString(inputStrB);
                 }
             }
-
         }
-    }
-    return "";
-}
-
-
-float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop) {
-    float totalCost = 0.0f;
 
         menuWindow.clear(sf::Color::White);  // Fondo blanco
 
@@ -641,6 +604,42 @@ float calculateTransportCost(const std::vector<std::string>& path, Graph& graph,
             yPosition += 20;
         }
 
+        menuWindow.display();
+    }
+}
+void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        Node* node = graph.getNode(path[i]);
+        Node* nextNode = graph.getNode(path[i + 1]);
+
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Green),
+            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), sf::Color::Green)
+        };
+        window.draw(line, 2, sf::Lines);
+    }
+}
+
+
+string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
+    for (const auto& vertex : graph.getVertices()) {
+        Node* node = graph.getNode(vertex);
+        float nodeX = node->getX();
+        float nodeY = node->getY();
+
+        float distance = sqrt(pow(x - nodeX, 2) + pow(y - nodeY, 2));
+
+        if (distance <= radius) {
+            return vertex;
+        }
+    }
+    return "";
+}
+
+
+float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop) {
+    float totalCost = 0.0f;
+
     for (size_t i = 0; i < path.size() - 1; ++i) {
         Node* currentNode = graph.getNode(path[i]);
         Node* nextNode = graph.getNode(path[i + 1]);
@@ -666,9 +665,8 @@ float calculateTransportCost(const std::vector<std::string>& path, Graph& graph,
 }
 
 
-
-
-int main() {
+int main()
+{
     sf::RenderWindow window;
     sf::Texture texture;
     if (!texture.loadFromFile("Fondo.png")) {
@@ -721,11 +719,9 @@ int main() {
     costText.setFillColor(sf::Color::Black);
     costText.setPosition(500, fixedHeight - 50);
 
-    sf::RectangleShape costTextBackground(sf::Vector2f(200, 30)); 
-    costTextBackground.setFillColor(sf::Color::White);            
-    costTextBackground.setPosition(500, fixedHeight - 50);       
-
-
+    sf::RectangleShape costTextBackground(sf::Vector2f(200, 30));
+    costTextBackground.setFillColor(sf::Color::White);
+    costTextBackground.setPosition(500, fixedHeight - 50);
     sf::RectangleShape dijkstraButton(sf::Vector2f(150, 50));
     dijkstraButton.setFillColor(sf::Color::Green);
     dijkstraButton.setPosition(10, fixedHeight - 60);
@@ -753,16 +749,27 @@ int main() {
     float costPerWeight = 0.5f; // Valor por unidad de distancia
     float costPerStop = 1.0f;   // Valor por cada nodo de detención
 
-    while (window.isOpen()) {
+    // Crear botón para abrir el menú
+    sf::RectangleShape menuButton(sf::Vector2f(100, 50));
+    menuButton.setFillColor(sf::Color::Green);
+    menuButton.setPosition(fixedWidth - 110, 10); // Posición en la esquina superior derecha
+
+    while (window.isOpen())
+    {
         sf::Event event;
-        while (window.pollEvent(event)) {
+        while (window.pollEvent(event))
+        {
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            if (event.type == sf::Event::MouseButtonPressed) {
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
                 float mouseX = event.mouseButton.x;
                 float mouseY = event.mouseButton.y;
-
+                if (menuButton.getGlobalBounds().contains(mouseX, mouseY))
+                {
+                    openMenuWindow(graph);
+                }
                 if (dijkstraButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     selectedAlgorithm = DIJKSTRA;
                     std::cout << "Algoritmo Dijkstra seleccionado" << std::endl;
@@ -810,21 +817,18 @@ int main() {
                             std::cout << "Punto de destino seleccionado: " << endNodeId << std::endl;
                         }
                     }
-
-            if (event.type == sf::Event::MouseButtonPressed)
-            {
-                if (menuButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
-                {
-                    openMenuWindow(graph);
-
                 }
             }
+
         }
 
         window.clear();
         window.draw(sprite);
+
+        // Dibujar el grafo completo
         drawGraph(window, graph, font);
 
+        // Dibujar la ruta específica en azul
         if (!shortestPath.empty()) {
             drawShortestPath(window, graph, shortestPath);
 
@@ -850,6 +854,8 @@ int main() {
             window.draw(carSprite);
         }
 
+        // Dibujar botón de menú
+        window.draw(menuButton);
         window.draw(dijkstraButton);
         window.draw(floydButton);
         window.draw(startButton);
@@ -858,7 +864,6 @@ int main() {
         window.draw(startText);
         window.draw(costTextBackground);
         window.draw(costText);
-
 
         window.display();
     }
