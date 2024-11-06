@@ -1,25 +1,25 @@
-#ifndef FLOYD_H
-#define FLOYD_H
+#ifndef FLOYDWARSHALL_H
+#define FLOYDWARSHALL_H
+
 #include "Graph.h"
 #include <vector>
 #include <string>
-#include <unordered_map>
 #include <limits>
 
-class Floyd {
-private:
-	Graph* graph;
-	unordered_map<string, unordered_map<string, double>> dist;
-	unordered_map<string, unordered_map<string, string>> next;
-	void initialize();
-	void computePaths();
-
+class FloydWarshall {
 public:
-	Floyd(Graph* graph);
-	Floyd();
-	vector<string> shortestPath(string& src, string& dest);
-	~Floyd();
+    FloydWarshall(Graph* graph);
+    void calculateShortestPaths();
+    std::vector<std::string> getShortestPath(const std::string& start, const std::string& end);
+
+private:
+    Graph* graph;
+    std::vector<std::vector<double>> distMatrix;
+    std::vector<std::vector<int>> nextNode;
+    std::unordered_map<std::string, int> nodeIndex;
+    std::unordered_map<int, std::string> indexNode;
+
+    void initializeMatrices();
 };
 
-
-#endif // FLOYD_H
+#endif
