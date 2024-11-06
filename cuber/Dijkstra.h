@@ -4,18 +4,17 @@
 #include "Graph.h"
 #include <vector>
 #include <string>
-#include <queue>
 #include <unordered_map>
 #include <limits>
+#include <queue>
 
 class Dijkstra {
 private:
-	Graph* graph;
+    Graph* graph;
+
 public:
-	Dijkstra(Graph* graph);
-	Dijkstra();
-	vector<string> shortestPath(string& src, string& dest);
-	~Dijkstra();
+    Dijkstra(Graph* graph);
+    std::vector<std::string> shortestPath(const std::string& src, const std::string& dest);
 };
 
-#endif
+#endif // DIJKSTRA_H

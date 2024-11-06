@@ -1,66 +1,63 @@
-#include "Floyd.h"
+#include "Dijkstra.h"
+#include <queue>
+#include <functional>
+#include <limits>
+#include <tuple>
+#include <algorithm>
+#include <unordered_map>
+#include <string>
+#include <vector>
 
-Floyd::Floyd(Graph* graph) {
-	this->graph = graph;
-	this->initialize();
-	this->computePaths();
+Dijkstra::Dijkstra(Graph* graph) {
+    this->graph = graph;
 }
 
-Floyd::Floyd() {
-	this->graph = new Graph();
-	this->initialize();
-	this->computePaths();
+Dijkstra::Dijkstra() {
+    this->graph = new Graph();
 }
 
-void Floyd::initialize() {
-	vector<string> vertices = this->graph->getVertices();
-	for (string& src : vertices) {
-		this->dist[src] = unordered_map<string, double>();
-		this->next[src] = unordered_map<string, string>();
-		for (string& dest : vertices) {
-			this->dist[src][dest] = numeric_limits<double>::infinity();
-			this->next[src][dest] = "";
-		}
-		this->dist[src][src] = 0;
-		vector<pair<string, double>> neighbors = this->graph->getNeighbors(src);
-		for (pair<string, double>& neighbor : neighbors) {
-			this->dist[src][neighbor.first] = neighbor.second;
-			this->next[src][neighbor.first] = neighbor.first;
-		}
-	}
+vector<string> Dijkstra::shortestPath(string& src, string& dest) {
+    unordered_map<string, double> dist;
+    unordered_map<string, string> prev;
+    vector<string> vertices = this->graph->getVertices();
+
+    for (const auto& vertex : vertices) {
+        dist[vertex] = numeric_limits<double>::infinity();
+        prev[vertex] = "";
+    }
+
+    dist[src] = 0;
+    priority_queue<pair<double, string>, vector<pair<double, string>>, greater<pair<double, string>>> pq;
+    pq.push(make_pair(0, src));
+
+    while (!pq.empty()) {
+        pair<double, string> top = pq.top();
+        pq.pop();
+        string u = top.second;
+
+        vector<tuple<string, double, bool>> neighbors = this->graph->getNeighbors(u);
+
+        for (const auto& neighbor : neighbors) {
+            string v = std::get<0>(neighbor);
+            double weight = std::get<1>(neighbor);
+            bool isBidirectional = std::get<2>(neighbor);
+
+            if (dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                prev[v] = u;
+                pq.push(make_pair(dist[v], v));
+            }
+        }
+    }
+
+    vector<string> path;
+    for (string at = dest; at != ""; at = prev[at]) {
+        path.push_back(at);
+    }
+    reverse(path.begin(), path.end());
+    return path;
 }
 
-void Floyd::computePaths() {
-	vector<string> vertices = this->graph->getVertices();
-	for (string& k : vertices) {
-		for (string& i : vertices) {
-			for (string& j : vertices) {
-				if (this->dist[i][j] > this->dist[i][k] + this->dist[k][j]) {
-					this->dist[i][j] = this->dist[i][k] + this->dist[k][j];
-					this->next[i][j] = this->next[i][k];
-				}
-			}
-		}
-	}
-}
-
-vector<string> Floyd::shortestPath(string& src, string& dest) {
-	vector<string> path;
-	if (this->next[src][dest] == "") {
-		return path;
-	}
-	path.push_back(src);
-	for (string at = src; at != dest; at = this->next[at][dest]) {
-		if (at == "") {
-			path.clear();
-			return path;
-		}
-		path.push_back(this->next[at][dest]);
-	}
-	return path;
-}
-
-
-Floyd::~Floyd() {
-	delete this->graph;
+Dijkstra::~Dijkstra() {
+    delete this->graph;
 }

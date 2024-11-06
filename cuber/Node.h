@@ -1,28 +1,26 @@
-#ifndef NODE_H
-#define	NODE_H
-
 #include <iostream>
 #include <string>
 #include <vector>
+#include <tuple>
 
 using namespace std;
 
 class Node {
-
 private:
-	string id;
-	float x, y;
-	vector<pair<string, double>> neighbors;
+    string id;
+    float x, y;
+    vector<tuple<string, double, bool>> neighbors;  // Cada vecino es una tupla con (ID, peso, bidireccionalidad)
+
 public:
-	Node();
-	Node(string& id, float x, float y);
-	string getId();
-	float getX();
-	float getY();
-	void addNeighbor(string& neighborId, double weight);
-	vector<pair<string, double>> getNeighbors();
-	~Node();
+    Node();
+    Node(const string& id, float x, float y);
 
+    string getId() const;
+    float getX() const;
+    float getY() const;
+
+    void addNeighbor(const string& neighborId, double weight, bool isBidirectional);
+    vector<tuple<string, double, bool>> getNeighbors() const;
+
+    ~Node();
 };
-
-#endif // NODE_H

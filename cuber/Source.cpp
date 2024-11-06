@@ -4,8 +4,9 @@
 #include <sstream>
 #include "Graph.h"
 #include "Dijkstra.h"
-#include "Floyd.h"
 #include <string>
+#include <deque>
+#include <algorithm>
 
 using namespace std;
 
@@ -22,38 +23,76 @@ void loadVerticesFromFile(Graph& graph, const string& filename) {
         int id;
         float x, y;
         char dot;
-        if (!(iss >> id >> dot >> x >> y)) { break; } // Error al leer la línea
+        if (!(iss >> id >> dot >> x >> y)) {
+            cerr << "Error al leer la línea: " << line << endl;
+            continue;
+        }
         string nodeName = "Node" + to_string(id);
         graph.addNode(nodeName, x, y);
     }
     file.close();
 }
 
-void loadGraphFromFile(Graph& graph, const string& filename) {
-    ifstream file(filename);
+void loadGraphFromFile(Graph& graph, const std::string& filename) {
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo " << filename << endl;
+        std::cerr << "Error: No se pudo abrir el archivo " << filename << std::endl;
         return;
     }
 
-    string line;
-    while (getline(file, line)) {
-        if (line.find("Punto") != string::npos) {
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.find("Punto") != std::string::npos) {
+            size_t startPos = line.find(" ") + 1;
+            size_t endPos = line.find(":");
             int id;
-            sscanf_s(line.c_str(), "Punto %d:", &id);
-            string nodeName = "Node" + to_string(id);
+            try {
+                id = std::stoi(line.substr(startPos, endPos - startPos));
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error al convertir el ID del punto: " << e.what() << std::endl;
+                continue;
+            }
+            std::string nodeName = "Node" + std::to_string(id);
 
-            // Leer vecinos
-            getline(file, line);
-            istringstream iss(line.substr(line.find(":") + 1));
-            string neighbor;
-            while (getline(iss, neighbor, ',')) {
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), '['), neighbor.end());
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), ']'), neighbor.end());
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), ' '), neighbor.end());
-                int neighborId = stoi(neighbor);
-                string neighborName = "Node" + to_string(neighborId);
-                graph.addEdge(nodeName, neighborName, 1.0); // Placeholder weight
+            std::getline(file, line);
+
+            std::getline(file, line);
+            size_t start = line.find(":") + 1;
+
+            while ((start = line.find('(', start)) != std::string::npos) {
+                size_t end = line.find(')', start);
+                if (end == std::string::npos) break;
+
+                std::string connection = line.substr(start + 1, end - start - 1);
+
+                int neighborId;
+                std::string direction;
+                try {
+                    size_t commaPos = connection.find(',');
+                    if (commaPos != std::string::npos) {
+                        neighborId = std::stoi(connection.substr(0, commaPos));
+                        direction = connection.substr(commaPos + 1);
+
+                        direction.erase(std::remove(direction.begin(), direction.end(), ' '), direction.end());
+                        bool isBidirectional = (direction == "True");
+
+                        std::string neighborName = "Node" + std::to_string(neighborId);
+                        graph.addEdge(nodeName, neighborName, 1.0, isBidirectional);
+
+                        std::cout << "Punto " << id << " colinda con " << neighborId
+                            << (isBidirectional ? " (doble sentido)" : " (una dirección)") << std::endl;
+                    }
+                    else {
+                        std::cerr << "Error en el formato de la conexión: " << connection << std::endl;
+                    }
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Error al leer el vecino y la dirección en la conexión: " << connection
+                        << " (" << e.what() << ")" << std::endl;
+                }
+
+                start = end + 1;
             }
         }
     }
@@ -61,219 +100,181 @@ void loadGraphFromFile(Graph& graph, const string& filename) {
 }
 
 void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
-    for ( auto& vertex : graph.getVertices()) {
+    for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
         auto neighbors = graph.getNeighbors(vertex);
 
-        // Dibujar el nodo
-        sf::CircleShape shape(10); // Radio del círculo más grande
+        sf::CircleShape shape(10);
         shape.setFillColor(sf::Color::Red);
         shape.setPosition(node->getX(), node->getY());
         window.draw(shape);
 
-        // Dibujar el ID del nodo
         sf::Text text;
         text.setFont(font);
-        text.setString(std::to_string(std::stoi(node->getId().substr(4)))); // Extraer el ID numérico
-        text.setCharacterSize(14); // Tamaño del texto
+        text.setString(std::to_string(std::stoi(node->getId().substr(4))));
+        text.setCharacterSize(14);
         text.setFillColor(sf::Color::Black);
         text.setPosition(node->getX(), node->getY());
         window.draw(text);
 
-        for ( auto& neighbor : neighbors) {
-            Node* neighborNode = graph.getNode(neighbor.first);
+        for (const auto& neighbor : neighbors) {
+            string neighborId;
+            double weight;
+            bool isBidirectional;
+
+            std::tie(neighborId, weight, isBidirectional) = neighbor;
+            Node* neighborNode = graph.getNode(neighborId);
+
+            sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
 
             sf::Vertex line[] = {
-                sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), sf::Color::Red)
+                sf::Vertex(sf::Vector2f(node->getX(), node->getY()), lineColor),
+                sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), lineColor)
             };
-
             window.draw(line, 2, sf::Lines);
-
-            if (graph.isDirected()) {
-                // Dibujar una segunda línea para los bordes bidireccionales
-                sf::Vertex reverseLine[] = {
-                    sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), sf::Color::Blue),
-                    sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Blue)
-                };
-
-                window.draw(reverseLine, 2, sf::Lines);
-            }
         }
     }
 }
 
-void openMenuWindow()
-{
-    sf::RenderWindow menuWindow(sf::VideoMode(300, 200), "Menu", sf::Style::Titlebar | sf::Style::Close);
-
-    sf::RectangleShape button1(sf::Vector2f(100, 50));
-    button1.setFillColor(sf::Color::Green);
-    button1.setPosition(10, 10);
-
-    sf::RectangleShape button2(sf::Vector2f(100, 50));
-    button2.setFillColor(sf::Color::Blue);
-    button2.setPosition(10, 70);
-
-    sf::RectangleShape toggleButton(sf::Vector2f(100, 50));
-    toggleButton.setFillColor(sf::Color::Red);
-    toggleButton.setPosition(10, 130);
-
-    bool toggleState = false;
-
-    while (menuWindow.isOpen())
-    {
-        sf::Event event;
-        while (menuWindow.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                menuWindow.close();
-
-            if (event.type == sf::Event::MouseButtonPressed)
-            {
-                if (button1.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
-                {
-                    std::cout << "Button 1 pressed" << std::endl;
-                }
-                if (button2.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
-                {
-                    std::cout << "Button 2 pressed" << std::endl;
-                }
-                if (toggleButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
-                {
-                    toggleState = !toggleState;
-                    toggleButton.setFillColor(toggleState ? sf::Color::Yellow : sf::Color::Red);
-                    std::cout << "Toggle Button state: " << (toggleState ? "On" : "Off") << std::endl;
-                }
-            }
-        }
-
-        menuWindow.clear();
-
-        // Dibujar botones
-        menuWindow.draw(button1);
-        menuWindow.draw(button2);
-        menuWindow.draw(toggleButton);
-
-        menuWindow.display();
-    }
-}
-void drawPath(sf::RenderWindow& window, Graph& graph, vector<string>& path) {
+void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
     for (size_t i = 0; i < path.size() - 1; ++i) {
         Node* node = graph.getNode(path[i]);
         Node* nextNode = graph.getNode(path[i + 1]);
 
-        // Calcular la posición y el ángulo de la línea
-        sf::Vector2f start(node->getX(), node->getY());
-        sf::Vector2f end(nextNode->getX(), nextNode->getY());
-        sf::Vector2f direction = end - start;
-
-        // Calcular la longitud de la línea
-        float length = sqrt(direction.x * direction.x + direction.y * direction.y);
-
-        // Crear un rectángulo para representar la línea ancha
-        sf::RectangleShape line(sf::Vector2f(length, 5)); // Ajusta el segundo parámetro para el grosor deseado
-        line.setFillColor(sf::Color::Green);
-
-        // Establecer la posición y rotación
-        line.setPosition(start);
-        line.setRotation(atan2(direction.y, direction.x) * 180 / 3.14159265f); // Convierte de radianes a grados
-
-        window.draw(line);
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Green),
+            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), sf::Color::Green)
+        };
+        window.draw(line, 2, sf::Lines);
     }
 }
 
+string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
+    for (const auto& vertex : graph.getVertices()) {
+        Node* node = graph.getNode(vertex);
+        float nodeX = node->getX();
+        float nodeY = node->getY();
 
+        float distance = sqrt(pow(x - nodeX, 2) + pow(y - nodeY, 2));
 
+        if (distance <= radius) {
+            return vertex;
+        }
+    }
+    return "";
+}
 
-
-int main()
-{
+int main() {
     sf::RenderWindow window;
-
-    // Cargar la imagen de fondo
     sf::Texture texture;
-    if (!texture.loadFromFile("Fondo.png"))
-    {
+    if (!texture.loadFromFile("Fondo.png")) {
         std::cerr << "Error: No se pudo cargar la imagen desde el archivo." << std::endl;
         return -1;
     }
 
     sf::Vector2u textureSize = texture.getSize();
-
-    // Definir el tamaño fijo de la ventana (puede ser 1280x720 o lo que prefieras)
     const unsigned int fixedWidth = 1280;
     const unsigned int fixedHeight = 720;
-
-    // Crear la ventana con el tamaño fijo
     window.create(sf::VideoMode(fixedWidth, fixedHeight), "SFML Fixed Size Window", sf::Style::Close);
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
-    // Escalar la imagen de fondo para que se ajuste al tamaño de la ventana
     sprite.setScale(
         static_cast<float>(fixedWidth) / textureSize.x,
         static_cast<float>(fixedHeight) / textureSize.y
     );
 
-    Graph graph(true); // true para grafo dirigido
-
-    // Leer los vértices desde el archivo vertices.txt
+    Graph graph(true);
     loadVerticesFromFile(graph, "vertices.txt");
-
-    // Leer los vecinos desde el archivo puntos.txt
     loadGraphFromFile(graph, "puntos.txt");
 
-    // Crear una instancia de Dijkstra y calcular la ruta
     Dijkstra dijkstra(&graph);
-    string startNode = "Node1"; // Nodo inicial (cámbialo según tus necesidades)
-    string endNode = "Node10";  // Nodo final (cámbialo según tus necesidades)
-    vector<string> path = dijkstra.shortestPath(startNode, endNode);
 
-    // Cargar la fuente para los números
     sf::Font font;
     if (!font.loadFromFile("arial.ttf")) {
         cerr << "Error: No se pudo cargar la fuente arial.ttf." << endl;
         return -1;
     }
 
-    // Crear botón para abrir el menú
-    sf::RectangleShape menuButton(sf::Vector2f(100, 50));
-    menuButton.setFillColor(sf::Color::Green);
-    menuButton.setPosition(fixedWidth - 110, 10); // Posición en la esquina superior derecha
+    sf::Texture carTexture;
+    if (!carTexture.loadFromFile("carro.png")) {
+        cerr << "Error: No se pudo cargar la imagen del carro." << endl;
+        return -1;
+    }
+    sf::Sprite carSprite(carTexture);
+    carSprite.setScale(0.1f, 0.1f);
 
-    while (window.isOpen())
-    {
+    string startNodeId, endNodeId;
+    bool selectingStartNode = true;
+    std::vector<std::string> shortestPath;
+    size_t pathIndex = 0;
+    bool animateCar = false;
+
+    while (window.isOpen()) {
         sf::Event event;
-        while (window.pollEvent(event))
-        {
+        while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
 
-            if (event.type == sf::Event::MouseButtonPressed)
-            {
-                if (menuButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
-                {
-                    openMenuWindow();
+            if (event.type == sf::Event::MouseButtonPressed) {
+                float mouseX = event.mouseButton.x;
+                float mouseY = event.mouseButton.y;
+                string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
+
+                if (!clickedNode.empty()) {
+                    if (selectingStartNode) {
+                        startNodeId = clickedNode;
+                        selectingStartNode = false;
+                        cout << "Punto de inicio seleccionado: " << startNodeId << endl;
+                    }
+                    else {
+                        endNodeId = clickedNode;
+                        selectingStartNode = true;
+                        cout << "Punto de destino seleccionado: " << endNodeId << endl;
+                        shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
+                        pathIndex = 0;
+                        animateCar = true;
+
+                        if (!shortestPath.empty()) {
+                            Node* startNode = graph.getNode(shortestPath[0]);
+                            carSprite.setPosition(startNode->getX(), startNode->getY());
+                        }
+                    }
                 }
             }
         }
 
         window.clear();
         window.draw(sprite);
-
-        // Dibujar el grafo completo
         drawGraph(window, graph, font);
 
-        // Dibujar la ruta específica en azul
-        drawPath(window, graph, path);
+        if (!shortestPath.empty()) {
+            drawShortestPath(window, graph, shortestPath);
 
-        // Dibujar botón de menú
-        window.draw(menuButton);
+            if (animateCar && pathIndex < shortestPath.size() - 1) {
+                Node* currentNode = graph.getNode(shortestPath[pathIndex]);
+                Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
+
+                sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
+                sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
+                sf::Vector2f direction = nextPos - currentPos;
+
+                float distance = sqrt(direction.x * direction.x + direction.y * direction.y);
+                if (distance != 0) direction /= distance;
+
+                carSprite.setPosition(carSprite.getPosition() + direction * 2.0f);
+
+                if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
+                    pathIndex++;
+                    carSprite.setPosition(nextPos);
+                }
+            }
+
+            window.draw(carSprite);
+        }
 
         window.display();
     }
 
     return 0;
 }
-

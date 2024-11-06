@@ -1,48 +1,55 @@
 #include "Dijkstra.h"
+#include <iostream>
 
+Dijkstra::Dijkstra(Graph* graph) : graph(graph) {}
 
-Dijkstra::Dijkstra(Graph* graph) {
-	this->graph = graph;
-}
+std::vector<std::string> Dijkstra::shortestPath(const std::string& src, const std::string& dest) {
+    // Mapa de distancias y predecesores
+    std::unordered_map<std::string, double> distances;
+    std::unordered_map<std::string, std::string> predecessors;
 
-Dijkstra::Dijkstra() {
-	this->graph = new Graph();
-}
+    for (const auto& node : graph->getVertices()) {
+        distances[node] = std::numeric_limits<double>::infinity();
+    }
+    distances[src] = 0;
 
-vector<string> Dijkstra::shortestPath(string& src, string& dest) {
-	unordered_map<string, double> dist;
-	unordered_map<string, string> prev;
-	vector<string> vertices = this->graph->getVertices();
-	for (int i = 0; i < vertices.size(); i++) {
-		dist[vertices[i]] = numeric_limits<double>::infinity();
-		prev[vertices[i]] = "";
-	}
-	dist[src] = 0;
-	priority_queue<pair<double, string>, vector<pair<double, string>>, greater<pair<double, string>>> pq;
-	pq.push(make_pair(0, src));
-	while (!pq.empty()) {
-		pair<double, string> top = pq.top();
-		pq.pop();
-		string u = top.second;
-		vector<pair<string, double>> neighbors = this->graph->getNeighbors(u);
-		for (int i = 0; i < neighbors.size(); i++) {
-			string v = neighbors[i].first;
-			double weight = neighbors[i].second;
-			if (dist[u] + weight < dist[v]) {
-				dist[v] = dist[u] + weight;
-				prev[v] = u;
-				pq.push(make_pair(dist[v], v));
-			}
-		}
-	}
-	vector<string> path;
-	for (string at = dest; at != ""; at = prev[at]) {
-		path.push_back(at);
-	}
-	reverse(path.begin(), path.end());
-	return path;
-}
+    using NodeDistPair = std::pair<double, std::string>;
+    std::priority_queue<NodeDistPair, std::vector<NodeDistPair>, std::greater<NodeDistPair>> pq;
+    pq.push({ 0, src });
 
-Dijkstra::~Dijkstra() {
-	delete this->graph;
+    while (!pq.empty()) {
+        double currentDist = pq.top().first;
+        std::string currentNode = pq.top().second;
+        pq.pop();
+
+        if (currentNode == dest) break;
+
+        for (const auto& neighborTuple : graph->getNeighbors(currentNode)) {
+            std::string neighbor;
+            double weight;
+            bool bidirectional;
+
+            std::tie(neighbor, weight, bidirectional) = neighborTuple;
+            double newDist = currentDist + weight;
+
+            if (newDist < distances[neighbor]) {
+                distances[neighbor] = newDist;
+                predecessors[neighbor] = currentNode;
+                pq.push({ newDist, neighbor });
+            }
+        }
+    }
+
+    std::vector<std::string> path;
+    for (std::string at = dest; at != src; at = predecessors[at]) {
+        path.push_back(at);
+        if (predecessors.find(at) == predecessors.end()) {
+            std::cout << "No se encontró camino entre " << src << " y " << dest << std::endl;
+            return {};
+        }
+    }
+    path.push_back(src);
+    std::reverse(path.begin(), path.end());
+
+    return path;
 }
