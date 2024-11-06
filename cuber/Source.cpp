@@ -8,11 +8,12 @@
 #include <string>
 #include <deque>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
-const float costPerWeight = 2.0f;   // Costo por unidad de peso/distancia
-const float costPerStop = 1.0f;     // Costo por tiempo de detención en cada nodo
-float totalTransportCost = 0.0f;    // Variable para almacenar el costo total de transporte
+const float costPerWeight = 0.01f;
+const float costPerStop = 0.01f;
+float totalTransportCost = 0.0f;    
 
 
 void loadVerticesFromFile(Graph& graph, const string& filename) {
@@ -117,8 +118,6 @@ void loadGraphFromFile(Graph& graph, const std::string& filename) {
     file.close();
 }
 
-#include <iomanip>
-#include <sstream>
 
 void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
     for (const auto& vertex : graph.getVertices()) {
@@ -222,7 +221,7 @@ float calculateTransportCost(const std::vector<std::string>& path, Graph& graph,
         sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
 
         // Calcular la distancia/peso entre los nodos
-        float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2));
+        float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2)) / 100.0f;
         float weightCost = distance * costPerWeight;
 
         // Agregar el costo de detención para el nodo actual
@@ -356,7 +355,11 @@ int main() {
                         }
 
                         float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
-                        costText.setString("Costo total: $" + std::to_string(totalTransportCost));
+                        std::ostringstream costStream;
+                        costStream << std::fixed << std::setprecision(4) << totalTransportCost;
+
+                        // Asignar el costo al texto con el símbolo de colón
+                        costText.setString("Costo total: $" + costStream.str());
                     }
                 }
                 else {
