@@ -60,11 +60,12 @@ void loadGraphFromFile(Graph& graph, const std::string& filename) {
             }
             std::string nodeName = "Node" + std::to_string(id);
 
-            std::getline(file, line);
+            std::getline(file, line); // Leer la línea de "Vecinos"
 
-            std::getline(file, line);
+            std::getline(file, line); // Leer la línea de "Calle Doble Sentido"
             size_t start = line.find(":") + 1;
 
+            // Procesar cada conexión en la línea "Calle Doble Sentido"
             while ((start = line.find('(', start)) != std::string::npos) {
                 size_t end = line.find(')', start);
                 if (end == std::string::npos) break;
@@ -73,55 +74,73 @@ void loadGraphFromFile(Graph& graph, const std::string& filename) {
 
                 int neighborId;
                 std::string direction;
+                float weight = 1.0; // Valor por defecto en caso de error
+
                 try {
                     size_t commaPos = connection.find(',');
-                    if (commaPos != std::string::npos) {
-                        neighborId = std::stoi(connection.substr(0, commaPos));
-                        direction = connection.substr(commaPos + 1);
+                    size_t secondCommaPos = connection.find_last_of(',');
 
+                    if (commaPos != std::string::npos && secondCommaPos != commaPos) {
+                        // Leer el ID del vecino
+                        neighborId = std::stoi(connection.substr(0, commaPos));
+
+                        // Leer el valor de dirección (True/False)
+                        direction = connection.substr(commaPos + 1, secondCommaPos - commaPos - 1);
                         direction.erase(std::remove(direction.begin(), direction.end(), ' '), direction.end());
                         bool isBidirectional = (direction == "True");
 
+                        // Leer el peso
+                        weight = std::stof(connection.substr(secondCommaPos + 1));
+
                         std::string neighborName = "Node" + std::to_string(neighborId);
-                        graph.addEdge(nodeName, neighborName, 1.0, isBidirectional);
+
+                        // Agregar la arista al grafo con el peso
+                        graph.addEdge(nodeName, neighborName, weight, isBidirectional);
 
                         std::cout << "Punto " << id << " colinda con " << neighborId
-                            << (isBidirectional ? " (doble sentido)" : " (una dirección)") << std::endl;
+                            << (isBidirectional ? " (doble sentido)" : " (una dirección)")
+                            << " con peso " << weight << std::endl;
                     }
                     else {
                         std::cerr << "Error en el formato de la conexión: " << connection << std::endl;
                     }
                 }
                 catch (const std::exception& e) {
-                    std::cerr << "Error al leer el vecino y la dirección en la conexión: " << connection
+                    std::cerr << "Error al leer el vecino, dirección o peso en la conexión: " << connection
                         << " (" << e.what() << ")" << std::endl;
                 }
 
-                start = end + 1;
+                start = end + 1; // Mover al siguiente elemento en la línea
             }
         }
     }
     file.close();
 }
 
+#include <iomanip>
+#include <sstream>
+
 void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
     for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
         auto neighbors = graph.getNeighbors(vertex);
 
+        // Dibujar el nodo
         sf::CircleShape shape(10);
         shape.setFillColor(sf::Color::Red);
         shape.setPosition(node->getX(), node->getY());
         window.draw(shape);
 
+        // Dibujar el ID del nodo
         sf::Text text;
         text.setFont(font);
         text.setString(std::to_string(std::stoi(node->getId().substr(4))));
-        text.setCharacterSize(14);
+        text.setCharacterSize(12);  // Tamaño reducido del ID del nodo
         text.setFillColor(sf::Color::Black);
         text.setPosition(node->getX(), node->getY());
         window.draw(text);
 
+        // Dibujar las conexiones (aristas) entre el nodo y sus vecinos
         for (const auto& neighbor : neighbors) {
             string neighborId;
             double weight;
@@ -130,16 +149,38 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             std::tie(neighborId, weight, isBidirectional) = neighbor;
             Node* neighborNode = graph.getNode(neighborId);
 
+            // Determinar el color de la arista
             sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
 
+            // Crear y dibujar la línea entre el nodo y su vecino
             sf::Vertex line[] = {
                 sf::Vertex(sf::Vector2f(node->getX(), node->getY()), lineColor),
                 sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), lineColor)
             };
             window.draw(line, 2, sf::Lines);
+
+            // Calcular la posición del texto del peso en el medio de la arista
+            float midX = (node->getX() + neighborNode->getX()) / 2;
+            float midY = (node->getY() + neighborNode->getY()) / 2;
+
+            // Crear y configurar el texto para mostrar el peso con menos decimales
+            std::ostringstream weightStream;
+            weightStream << std::fixed << std::setprecision(1) << weight; // Una posición decimal
+
+            sf::Text weightText;
+            weightText.setFont(font);
+            weightText.setString(weightStream.str());
+            weightText.setCharacterSize(10);  // Tamaño reducido del texto del peso
+            weightText.setFillColor(sf::Color::Black);
+            weightText.setPosition(midX, midY);
+
+            // Dibujar el texto del peso
+            window.draw(weightText);
         }
     }
 }
+
+
 
 void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
     for (size_t i = 0; i < path.size() - 1; ++i) {
