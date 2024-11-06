@@ -1,21 +1,12 @@
-#ifndef DIJKSTRA_H
-#define DIJKSTRA_H
-
-#include "Graph.h"
-#include <vector>
 #include <string>
-#include <queue>
-#include <unordered_map>
-#include <limits>
+#include <vector>
+#include "Graph.h"
 
 class Dijkstra {
-private:
-	Graph* graph;
 public:
-	Dijkstra(Graph* graph);
-	Dijkstra();
-	vector<string> shortestPath(string& src, string& dest);
-	~Dijkstra();
-};
+    Dijkstra(Graph* graph);
+    std::vector<std::string> shortestPath(const std::string& startNodeId, const std::string& endNodeId);
 
-#endif
+private:
+    Graph* graph;
+};

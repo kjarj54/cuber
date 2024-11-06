@@ -44,9 +44,6 @@
     <ClInclude Include="Dijkstra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Floyd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="vertices.txt">

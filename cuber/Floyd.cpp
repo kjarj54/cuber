@@ -1,66 +1,96 @@
 #include "Floyd.h"
+#include <iostream>
+#include <limits>
+#include <algorithm>
 
-Floyd::Floyd(Graph* graph) {
-	this->graph = graph;
-	this->initialize();
-	this->computePaths();
+FloydWarshall::FloydWarshall(Graph* graph) : graph(graph) {
+    initializeMatrices();
+    calculateShortestPaths();
 }
 
-Floyd::Floyd() {
-	this->graph = new Graph();
-	this->initialize();
-	this->computePaths();
+void FloydWarshall::initializeMatrices() {
+    int n = graph->getVertices().size();
+    distMatrix.resize(n, std::vector<double>(n, std::numeric_limits<double>::infinity()));
+    nextNode.resize(n, std::vector<int>(n, -1));
+
+    int index = 0;
+    for (const auto& vertex : graph->getVertices()) {
+        nodeIndex[vertex] = index;
+        indexNode[index] = vertex;
+        ++index;
+    }
+
+    for (const auto& vertex : graph->getVertices()) {
+        int u = nodeIndex[vertex];
+        distMatrix[u][u] = 0;
+
+        for (const auto& neighbor : graph->getNeighbors(vertex)) {
+            std::string neighborId;
+            double weight;
+            bool isBidirectional;
+            std::tie(neighborId, weight, isBidirectional) = neighbor;
+
+            int v = nodeIndex[neighborId];
+            distMatrix[u][v] = weight;
+            nextNode[u][v] = v;
+
+            if (isBidirectional) {
+                distMatrix[v][u] = weight;
+                nextNode[v][u] = u;
+            }
+        }
+    }
 }
 
-void Floyd::initialize() {
-	vector<string> vertices = this->graph->getVertices();
-	for (string& src : vertices) {
-		this->dist[src] = unordered_map<string, double>();
-		this->next[src] = unordered_map<string, string>();
-		for (string& dest : vertices) {
-			this->dist[src][dest] = numeric_limits<double>::infinity();
-			this->next[src][dest] = "";
-		}
-		this->dist[src][src] = 0;
-		vector<pair<string, double>> neighbors = this->graph->getNeighbors(src);
-		for (pair<string, double>& neighbor : neighbors) {
-			this->dist[src][neighbor.first] = neighbor.second;
-			this->next[src][neighbor.first] = neighbor.first;
-		}
-	}
+void FloydWarshall::calculateShortestPaths() {
+    int n = distMatrix.size();
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (distMatrix[i][k] + distMatrix[k][j] < distMatrix[i][j]) {
+                    distMatrix[i][j] = distMatrix[i][k] + distMatrix[k][j];
+                    nextNode[i][j] = nextNode[i][k];
+                }
+            }
+        }
+    }
 }
 
-void Floyd::computePaths() {
-	vector<string> vertices = this->graph->getVertices();
-	for (string& k : vertices) {
-		for (string& i : vertices) {
-			for (string& j : vertices) {
-				if (this->dist[i][j] > this->dist[i][k] + this->dist[k][j]) {
-					this->dist[i][j] = this->dist[i][k] + this->dist[k][j];
-					this->next[i][j] = this->next[i][k];
-				}
-			}
-		}
-	}
+std::vector<std::string> FloydWarshall::getShortestPath(const std::string& start, const std::string& end) {
+    int u = nodeIndex[start];
+    int v = nodeIndex[end];
+
+    if (nextNode[u][v] == -1) {
+        return {}; // No hay camino
+    }
+
+    std::vector<std::string> path;
+    while (u != v) {
+        path.push_back(indexNode[u]);
+        u = nextNode[u][v];
+    }
+    path.push_back(indexNode[v]);
+    return path;
 }
 
-vector<string> Floyd::shortestPath(string& src, string& dest) {
-	vector<string> path;
-	if (this->next[src][dest] == "") {
-		return path;
-	}
-	path.push_back(src);
-	for (string at = src; at != dest; at = this->next[at][dest]) {
-		if (at == "") {
-			path.clear();
-			return path;
-		}
-		path.push_back(this->next[at][dest]);
-	}
-	return path;
+double FloydWarshall::calculateTransportCost(const std::string& start, const std::string& end, double costPerWeight, double costPerStop) {
+    int u = nodeIndex[start];
+    int v = nodeIndex[end];
+
+    if (nextNode[u][v] == -1) {
+        std::cerr << "No existe un camino entre los nodos " << start << " y " << end << std::endl;
+        return std::numeric_limits<double>::infinity(); // Camino no disponible
+    }
+
+    double totalCost = 0.0;
+    while (u != v) {
+        int next = nextNode[u][v];
+        double edgeWeight = distMatrix[u][next];
+        totalCost += edgeWeight * costPerWeight; // Costo por peso
+        totalCost += costPerStop; // Costo adicional por detenerse en el nodo
+        u = next;
+    }
+
+    return totalCost;
 }
 
-
-Floyd::~Floyd() {
-	delete this->graph;
-}

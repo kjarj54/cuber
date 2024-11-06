@@ -6,9 +6,17 @@
 #include "Dijkstra.h"
 #include "Floyd.h"
 #include <string>
+#include <deque>
+#include <algorithm>
+#include <iomanip>
 #include "Incident.cpp"
 
+
 using namespace std;
+const float costPerWeight = 0.01f;
+const float costPerStop = 0.01f;
+float totalTransportCost = 0.0f;    
+
 
 std::vector<Incident> incidents;
 
@@ -26,51 +34,103 @@ void loadVerticesFromFile(Graph& graph, const string& filename) {
         int id;
         float x, y;
         char dot;
-        if (!(iss >> id >> dot >> x >> y)) { break; } // Error al leer la línea
+        if (!(iss >> id >> dot >> x >> y)) {
+            cerr << "Error al leer la línea: " << line << endl;
+            continue;
+        }
         string nodeName = "Node" + to_string(id);
         graph.addNode(nodeName, x, y);
     }
     file.close();
 }
 
-void loadGraphFromFile(Graph& graph, const string& filename) {
-    ifstream file(filename);
+void loadGraphFromFile(Graph& graph, const std::string& filename) {
+    std::ifstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error: No se pudo abrir el archivo " << filename << endl;
+        std::cerr << "Error: No se pudo abrir el archivo " << filename << std::endl;
         return;
     }
 
-    string line;
-    while (getline(file, line)) {
-        if (line.find("Punto") != string::npos) {
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.find("Punto") != std::string::npos) {
+            size_t startPos = line.find(" ") + 1;
+            size_t endPos = line.find(":");
             int id;
-            sscanf_s(line.c_str(), "Punto %d:", &id);
-            string nodeName = "Node" + to_string(id);
+            try {
+                id = std::stoi(line.substr(startPos, endPos - startPos));
+            }
+            catch (const std::exception& e) {
+                std::cerr << "Error al convertir el ID del punto: " << e.what() << std::endl;
+                continue;
+            }
+            std::string nodeName = "Node" + std::to_string(id);
 
-            // Leer vecinos
-            getline(file, line);
-            istringstream iss(line.substr(line.find(":") + 1));
-            string neighbor;
-            while (getline(iss, neighbor, ',')) {
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), '['), neighbor.end());
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), ']'), neighbor.end());
-                neighbor.erase(remove(neighbor.begin(), neighbor.end(), ' '), neighbor.end());
-                int neighborId = stoi(neighbor);
-                string neighborName = "Node" + to_string(neighborId);
-                graph.addEdge(nodeName, neighborName, 1.0); // Placeholder weight
+            std::getline(file, line); // Leer la línea de "Vecinos"
+
+            std::getline(file, line); // Leer la línea de "Calle Doble Sentido"
+            size_t start = line.find(":") + 1;
+
+            // Procesar cada conexión en la línea "Calle Doble Sentido"
+            while ((start = line.find('(', start)) != std::string::npos) {
+                size_t end = line.find(')', start);
+                if (end == std::string::npos) break;
+
+                std::string connection = line.substr(start + 1, end - start - 1);
+
+                int neighborId;
+                std::string direction;
+                float weight = 1.0; // Valor por defecto en caso de error
+
+                try {
+                    size_t commaPos = connection.find(',');
+                    size_t secondCommaPos = connection.find_last_of(',');
+
+                    if (commaPos != std::string::npos && secondCommaPos != commaPos) {
+                        // Leer el ID del vecino
+                        neighborId = std::stoi(connection.substr(0, commaPos));
+
+                        // Leer el valor de dirección (True/False)
+                        direction = connection.substr(commaPos + 1, secondCommaPos - commaPos - 1);
+                        direction.erase(std::remove(direction.begin(), direction.end(), ' '), direction.end());
+                        bool isBidirectional = (direction == "True");
+
+                        // Leer el peso
+                        weight = std::stof(connection.substr(secondCommaPos + 1));
+
+                        std::string neighborName = "Node" + std::to_string(neighborId);
+
+                        // Agregar la arista al grafo con el peso
+                        graph.addEdge(nodeName, neighborName, weight, isBidirectional);
+
+                        std::cout << "Punto " << id << " colinda con " << neighborId
+                            << (isBidirectional ? " (doble sentido)" : " (una dirección)")
+                            << " con peso " << weight << std::endl;
+                    }
+                    else {
+                        std::cerr << "Error en el formato de la conexión: " << connection << std::endl;
+                    }
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Error al leer el vecino, dirección o peso en la conexión: " << connection
+                        << " (" << e.what() << ")" << std::endl;
+                }
+
+                start = end + 1; // Mover al siguiente elemento en la línea
             }
         }
     }
     file.close();
 }
 
+
 void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
-    for ( auto& vertex : graph.getVertices()) {
+    for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
         auto neighbors = graph.getNeighbors(vertex);
 
         // Dibujar el nodo
-        sf::CircleShape shape(10); // Radio del círculo más grande
+        sf::CircleShape shape(10);
         shape.setFillColor(sf::Color::Red);
         shape.setPosition(node->getX(), node->getY());
         window.draw(shape);
@@ -78,35 +138,78 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
         // Dibujar el ID del nodo
         sf::Text text;
         text.setFont(font);
-        text.setString(std::to_string(std::stoi(node->getId().substr(4)))); // Extraer el ID numérico
-        text.setCharacterSize(14); // Tamaño del texto
+        text.setString(std::to_string(std::stoi(node->getId().substr(4))));
+        text.setCharacterSize(12);  // Tamaño reducido del ID del nodo
         text.setFillColor(sf::Color::Black);
         text.setPosition(node->getX(), node->getY());
         window.draw(text);
 
-        for ( auto& neighbor : neighbors) {
-            Node* neighborNode = graph.getNode(neighbor.first);
+        // Dibujar las conexiones (aristas) entre el nodo y sus vecinos
+        for (const auto& neighbor : neighbors) {
+            string neighborId;
+            double weight;
+            bool isBidirectional;
 
+            std::tie(neighborId, weight, isBidirectional) = neighbor;
+            Node* neighborNode = graph.getNode(neighborId);
+
+            // Determinar el color de la arista
+            sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
+
+            // Crear y dibujar la línea entre el nodo y su vecino
             sf::Vertex line[] = {
-                sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Red),
-                sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), sf::Color::Red)
+                sf::Vertex(sf::Vector2f(node->getX(), node->getY()), lineColor),
+                sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), lineColor)
             };
-
             window.draw(line, 2, sf::Lines);
 
-            if (graph.isDirected()) {
-                // Dibujar una segunda línea para los bordes bidireccionales
-                sf::Vertex reverseLine[] = {
-                    sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), sf::Color::Blue),
-                    sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Blue)
-                };
+            // Calcular la posición del texto del peso en el medio de la arista
+            float midX = (node->getX() + neighborNode->getX()) / 2;
+            float midY = (node->getY() + neighborNode->getY()) / 2;
 
-                window.draw(reverseLine, 2, sf::Lines);
-            }
+            // Crear y configurar el texto para mostrar el peso con menos decimales
+            std::ostringstream weightStream;
+            weightStream << std::fixed << std::setprecision(1) << weight; // Una posición decimal
+
+            sf::Text weightText;
+            weightText.setFont(font);
+            weightText.setString(weightStream.str());
+            weightText.setCharacterSize(12);  // Tamaño reducido del texto del peso
+            weightText.setFillColor(sf::Color::Black);
+            weightText.setPosition(midX, midY);
+
+            // Dibujar el texto del peso
+            window.draw(weightText);
         }
     }
 }
 
+
+
+
+void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
+    for (size_t i = 0; i < path.size() - 1; ++i) {
+        Node* node = graph.getNode(path[i]);
+        Node* nextNode = graph.getNode(path[i + 1]);
+
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Green),
+            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), sf::Color::Green)
+        };
+        window.draw(line, 2, sf::Lines);
+    }
+}
+
+string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
+    for (const auto& vertex : graph.getVertices()) {
+        Node* node = graph.getNode(vertex);
+        float nodeX = node->getX();
+        float nodeY = node->getY();
+
+        float distance = sqrt(pow(x - nodeX, 2) + pow(y - nodeY, 2));
+
+        if (distance <= radius) {
+            return vertex;
 
 // Función para abrir la ventana de incidentes y añadir uno nuevo
 void openIncidentWindow(Graph& graph) {
@@ -492,7 +595,15 @@ void openMenuWindow(Graph& graph) {
                     inputB.setString(inputStrB);
                 }
             }
+
         }
+    }
+    return "";
+}
+
+
+float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop) {
+    float totalCost = 0.0f;
 
         menuWindow.clear(sf::Color::White);  // Fondo blanco
 
@@ -530,125 +641,227 @@ void openMenuWindow(Graph& graph) {
             yPosition += 20;
         }
 
-        menuWindow.display();
-    }
-}
-void drawPath(sf::RenderWindow& window, Graph& graph, vector<string>& path) {
     for (size_t i = 0; i < path.size() - 1; ++i) {
-        Node* node = graph.getNode(path[i]);
+        Node* currentNode = graph.getNode(path[i]);
         Node* nextNode = graph.getNode(path[i + 1]);
 
-        // Calcular la posición y el ángulo de la línea
-        sf::Vector2f start(node->getX(), node->getY());
-        sf::Vector2f end(nextNode->getX(), nextNode->getY());
-        sf::Vector2f direction = end - start;
+        sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
+        sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
 
-        // Calcular la longitud de la línea
-        float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+        // Calcular la distancia/peso entre los nodos
+        float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2)) / 100.0f;
+        float weightCost = distance * costPerWeight;
 
-        // Crear un rectángulo para representar la línea ancha
-        sf::RectangleShape line(sf::Vector2f(length, 5)); // Ajusta el segundo parámetro para el grosor deseado
-        line.setFillColor(sf::Color::Green);
+        // Agregar el costo de detención para el nodo actual
+        float stopCost = costPerStop;
 
-        // Establecer la posición y rotación
-        line.setPosition(start);
-        line.setRotation(atan2(direction.y, direction.x) * 180 / 3.14159265f); // Convierte de radianes a grados
-
-        window.draw(line);
+        // Sumar los costos de peso y detención al costo total
+        totalCost += weightCost + stopCost;
     }
+
+    // Agregar el costo de detención para el último nodo (si es necesario)
+    totalCost += costPerStop;
+
+    return totalCost;
 }
 
 
 
 
-
-int main()
-{
+int main() {
     sf::RenderWindow window;
-
-    // Cargar la imagen de fondo
     sf::Texture texture;
-    if (!texture.loadFromFile("Fondo.png"))
-    {
+    if (!texture.loadFromFile("Fondo.png")) {
         std::cerr << "Error: No se pudo cargar la imagen desde el archivo." << std::endl;
         return -1;
     }
 
     sf::Vector2u textureSize = texture.getSize();
-
-    // Definir el tamaño fijo de la ventana (puede ser 1280x720 o lo que prefieras)
     const unsigned int fixedWidth = 1280;
     const unsigned int fixedHeight = 720;
-
-    // Crear la ventana con el tamaño fijo
     window.create(sf::VideoMode(fixedWidth, fixedHeight), "SFML Fixed Size Window", sf::Style::Close);
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
-    // Escalar la imagen de fondo para que se ajuste al tamaño de la ventana
     sprite.setScale(
         static_cast<float>(fixedWidth) / textureSize.x,
         static_cast<float>(fixedHeight) / textureSize.y
     );
 
-    Graph graph(true); // true para grafo dirigido
-
-    // Leer los vértices desde el archivo vertices.txt
+    Graph graph(true);
     loadVerticesFromFile(graph, "vertices.txt");
-
-    // Leer los vecinos desde el archivo puntos.txt
     loadGraphFromFile(graph, "puntos.txt");
 
-    // Crear una instancia de Dijkstra y calcular la ruta
     Dijkstra dijkstra(&graph);
-    string startNode = "Node1"; // Nodo inicial (cámbialo según tus necesidades)
-    string endNode = "Node10";  // Nodo final (cámbialo según tus necesidades)
-    vector<string> path = dijkstra.shortestPath(startNode, endNode);
-
-    // Cargar la fuente para los números
+    FloydWarshall floydWarshall(&graph);
     sf::Font font;
     if (!font.loadFromFile("arial.ttf")) {
-        cerr << "Error: No se pudo cargar la fuente arial.ttf." << endl;
+        std::cerr << "Error: No se pudo cargar la fuente arial.ttf." << std::endl;
         return -1;
     }
 
-    // Crear botón para abrir el menú
-    sf::RectangleShape menuButton(sf::Vector2f(100, 50));
-    menuButton.setFillColor(sf::Color::Green);
-    menuButton.setPosition(fixedWidth - 110, 10); // Posición en la esquina superior derecha
+    sf::Texture carTexture;
+    if (!carTexture.loadFromFile("carro.png")) {
+        std::cerr << "Error: No se pudo cargar la imagen del carro." << std::endl;
+        return -1;
+    }
+    sf::Sprite carSprite(carTexture);
+    carSprite.setScale(0.1f, 0.1f);
 
-    while (window.isOpen())
-    {
+    string startNodeId, endNodeId;
+    bool selectingStartNode = true;
+    std::vector<std::string> shortestPath;
+    size_t pathIndex = 0;
+    bool animateCar = false;
+
+    enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
+    Algorithm selectedAlgorithm = DIJKSTRA;
+
+    sf::Text costText("Costo total: $0.0", font, 20);
+    costText.setFillColor(sf::Color::Black);
+    costText.setPosition(500, fixedHeight - 50);
+
+    sf::RectangleShape costTextBackground(sf::Vector2f(200, 30)); 
+    costTextBackground.setFillColor(sf::Color::White);            
+    costTextBackground.setPosition(500, fixedHeight - 50);       
+
+
+    sf::RectangleShape dijkstraButton(sf::Vector2f(150, 50));
+    dijkstraButton.setFillColor(sf::Color::Green);
+    dijkstraButton.setPosition(10, fixedHeight - 60);
+
+    sf::RectangleShape floydButton(sf::Vector2f(150, 50));
+    floydButton.setFillColor(sf::Color::Blue);
+    floydButton.setPosition(170, fixedHeight - 60);
+
+    sf::RectangleShape startButton(sf::Vector2f(150, 50));
+    startButton.setFillColor(sf::Color::Yellow);
+    startButton.setPosition(330, fixedHeight - 60);
+
+    sf::Text dijkstraText("Dijkstra", font, 20);
+    dijkstraText.setFillColor(sf::Color::Black);
+    dijkstraText.setPosition(25, fixedHeight - 50);
+
+    sf::Text floydText("Floyd-Warshall", font, 20);
+    floydText.setFillColor(sf::Color::Black);
+    floydText.setPosition(180, fixedHeight - 50);
+
+    sf::Text startText("Iniciar", font, 20);
+    startText.setFillColor(sf::Color::Black);
+    startText.setPosition(350, fixedHeight - 50);
+
+    float costPerWeight = 0.5f; // Valor por unidad de distancia
+    float costPerStop = 1.0f;   // Valor por cada nodo de detención
+
+    while (window.isOpen()) {
         sf::Event event;
-        while (window.pollEvent(event))
-        {
+        while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed)
                 window.close();
+
+            if (event.type == sf::Event::MouseButtonPressed) {
+                float mouseX = event.mouseButton.x;
+                float mouseY = event.mouseButton.y;
+
+                if (dijkstraButton.getGlobalBounds().contains(mouseX, mouseY)) {
+                    selectedAlgorithm = DIJKSTRA;
+                    std::cout << "Algoritmo Dijkstra seleccionado" << std::endl;
+                }
+                else if (floydButton.getGlobalBounds().contains(mouseX, mouseY)) {
+                    selectedAlgorithm = FLOYD_WARSHALL;
+                    std::cout << "Algoritmo Floyd-Warshall seleccionado" << std::endl;
+                }
+                else if (startButton.getGlobalBounds().contains(mouseX, mouseY)) {
+                    if (!startNodeId.empty() && !endNodeId.empty()) {
+                        if (selectedAlgorithm == DIJKSTRA) {
+                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
+                        }
+                        else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
+                        }
+                        pathIndex = 0;
+                        animateCar = true;
+
+                        if (!shortestPath.empty()) {
+                            Node* startNode = graph.getNode(shortestPath[0]);
+                            carSprite.setPosition(startNode->getX(), startNode->getY());
+                        }
+
+                        float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
+                        std::ostringstream costStream;
+                        costStream << std::fixed << std::setprecision(4) << totalTransportCost;
+
+                        // Asignar el costo al texto con el símbolo de colón
+                        costText.setString("Costo total: $" + costStream.str());
+                    }
+                }
+                else {
+                    string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
+
+                    if (!clickedNode.empty()) {
+                        if (selectingStartNode) {
+                            startNodeId = clickedNode;
+                            selectingStartNode = false;
+                            std::cout << "Punto de inicio seleccionado: " << startNodeId << std::endl;
+                        }
+                        else {
+                            endNodeId = clickedNode;
+                            selectingStartNode = true;
+                            std::cout << "Punto de destino seleccionado: " << endNodeId << std::endl;
+                        }
+                    }
 
             if (event.type == sf::Event::MouseButtonPressed)
             {
                 if (menuButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y))
                 {
                     openMenuWindow(graph);
+
                 }
             }
         }
 
         window.clear();
         window.draw(sprite);
-
-        // Dibujar el grafo completo
         drawGraph(window, graph, font);
 
-        // Dibujar la ruta específica en azul
-        drawPath(window, graph, path);
+        if (!shortestPath.empty()) {
+            drawShortestPath(window, graph, shortestPath);
 
-        // Dibujar botón de menú
-        window.draw(menuButton);
+            if (animateCar && pathIndex < shortestPath.size() - 1) {
+                Node* currentNode = graph.getNode(shortestPath[pathIndex]);
+                Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
+
+                sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
+                sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
+                sf::Vector2f direction = nextPos - currentPos;
+
+                float distance = sqrt(direction.x * direction.x + direction.y * direction.y);
+                if (distance != 0) direction /= distance;
+
+                carSprite.move(direction * 2.0f);
+
+                if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
+                    pathIndex++;
+                    carSprite.setPosition(nextPos);
+                }
+            }
+
+            window.draw(carSprite);
+        }
+
+        window.draw(dijkstraButton);
+        window.draw(floydButton);
+        window.draw(startButton);
+        window.draw(dijkstraText);
+        window.draw(floydText);
+        window.draw(startText);
+        window.draw(costTextBackground);
+        window.draw(costText);
+
 
         window.display();
     }
 
     return 0;
 }
-

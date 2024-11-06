@@ -3,24 +3,35 @@
 
 #include "Node.h"
 #include <unordered_map>
+#include <vector>
+#include <tuple>
+#include <string>
 
 class Graph {
 private:
     bool directed;
     unordered_map<string, Node*> nodes;
+
 public:
     Graph();
     Graph(bool directed);
-    void addNode(string& id, float x, float y);
-    void addEdge(string& src, string& dest, double weight);
-    void addBidirectionalEdge(string& src, string& dest, double weight); // Nuevo m�todo
+    void addNode(const string& id, float x, float y);
+    void addEdge(const string& src, const string& dest, double weight, bool isBidirectional);
+    void addBidirectionalEdge(const string& src, const string& dest, double weight);
     vector<string> getVertices();
-    vector<pair<string, double>> getNeighbors(string& vertex);
-    Node* getNode(string& id);
+
+    // Asegúrate de que esta declaración coincida con la definición en Graph.cpp
+    vector<tuple<string, double, bool>> getNeighbors(const string& vertex) ;
+
+    Node* getNode(const string& id);
     bool isDirected();
+
+    int getTotalCost(const vector<double>& wayCost, int costPerWeight);
+
     bool isDirectNeighbor(const std::string& src, const std::string& dest);
     bool isDoubleWay(const std::string& src, const std::string& dest);
     int getTotalCost(vector<double> wayCost, int costPerWeigth);
+
     ~Graph();
 };
 

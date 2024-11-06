@@ -1,48 +1,59 @@
 #include "Dijkstra.h"
+#include <queue>
+#include <unordered_map>
+#include <limits>
+#include <algorithm>
 
+Dijkstra::Dijkstra(Graph* graph) : graph(graph) {}
 
-Dijkstra::Dijkstra(Graph* graph) {
-	this->graph = graph;
-}
+std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, const std::string& endNodeId) {
+    std::unordered_map<std::string, double> distances;
+    std::unordered_map<std::string, std::string> previous;
+    std::priority_queue<std::pair<double, std::string>, std::vector<std::pair<double, std::string>>, std::greater<>> pq;
 
-Dijkstra::Dijkstra() {
-	this->graph = new Graph();
-}
+    // Inicializar todas las distancias como "infinito"
+    for (const auto& vertex : graph->getVertices()) {
+        distances[vertex] = std::numeric_limits<double>::infinity();
+    }
 
-vector<string> Dijkstra::shortestPath(string& src, string& dest) {
-	unordered_map<string, double> dist;
-	unordered_map<string, string> prev;
-	vector<string> vertices = this->graph->getVertices();
-	for (int i = 0; i < vertices.size(); i++) {
-		dist[vertices[i]] = numeric_limits<double>::infinity();
-		prev[vertices[i]] = "";
-	}
-	dist[src] = 0;
-	priority_queue<pair<double, string>, vector<pair<double, string>>, greater<pair<double, string>>> pq;
-	pq.push(make_pair(0, src));
-	while (!pq.empty()) {
-		pair<double, string> top = pq.top();
-		pq.pop();
-		string u = top.second;
-		vector<pair<string, double>> neighbors = this->graph->getNeighbors(u);
-		for (int i = 0; i < neighbors.size(); i++) {
-			string v = neighbors[i].first;
-			double weight = neighbors[i].second;
-			if (dist[u] + weight < dist[v]) {
-				dist[v] = dist[u] + weight;
-				prev[v] = u;
-				pq.push(make_pair(dist[v], v));
-			}
-		}
-	}
-	vector<string> path;
-	for (string at = dest; at != ""; at = prev[at]) {
-		path.push_back(at);
-	}
-	reverse(path.begin(), path.end());
-	return path;
-}
+    distances[startNodeId] = 0.0;
+    pq.push({ 0.0, startNodeId });
 
-Dijkstra::~Dijkstra() {
-	delete this->graph;
+    while (!pq.empty()) {
+        auto top = pq.top();
+        double currentDist = top.first;
+        std::string currentNode = top.second;
+        pq.pop();
+
+        if (currentNode == endNodeId) break;
+
+        if (currentDist > distances[currentNode]) continue;
+
+        for (const auto& neighbor : graph->getNeighbors(currentNode)) {
+            std::string neighborId;
+            double weight;
+            bool isBidirectional;
+            std::tie(neighborId, weight, isBidirectional) = neighbor;
+
+            double newDist = currentDist + weight;
+            if (newDist < distances[neighborId]) {
+                distances[neighborId] = newDist;
+                previous[neighborId] = currentNode;
+                pq.push({ newDist, neighborId });
+            }
+        }
+    }
+
+    // Reconstruir el camino desde `endNodeId` hacia `startNodeId`
+    std::vector<std::string> path;
+    for (std::string at = endNodeId; at != ""; at = previous[at]) {
+        path.push_back(at);
+        if (at == startNodeId) break;
+    }
+    std::reverse(path.begin(), path.end());
+
+    if (path.front() != startNodeId) {
+        return {}; // Devuelve un camino vacío si no se encuentra el camino entre los nodos
+    }
+    return path;
 }
