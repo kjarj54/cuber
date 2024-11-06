@@ -37,7 +37,7 @@ vector<string> Graph::getVertices() {
     return vertices;
 }
 
-// Definici�n de getNeighbors en Graph.cpp
+// Definición de getNeighbors en Graph.cpp
 vector<tuple<string, double, bool>> Graph::getNeighbors(const string& vertex) {
     vector<tuple<string, double, bool>> neighbors;
 
@@ -68,7 +68,32 @@ bool Graph::isDirected() {
     return directed;
 }
 
+
 int Graph::getTotalCost(const vector<double>& wayCost, int costPerWeight) {
+// Verifica si 'dest' es vecino directo de 'src'
+bool Graph::isDirectNeighbor(const std::string& src, const std::string& dest) {
+    if (nodes.find(src) != nodes.end()) {
+        for (const auto& neighbor : nodes[src]->getNeighbors()) {
+            if (neighbor.first == dest) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// Verifica si hay doble sentido entre 'src' y 'dest'
+bool Graph::isDoubleWay(const std::string& src, const std::string& dest) {
+    // Comprobar si ambos son vecinos directos entre sí
+    if (isDirectNeighbor(src, dest) && isDirectNeighbor(dest, src)) {
+        return true;
+    }
+    return false;
+}
+
+int Graph::getTotalCost(vector<double> wayCost, int costPerWeigth) {
+    
+
     double total = 0;
     for (double c : wayCost) {
         total += c;

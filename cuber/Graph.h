@@ -20,12 +20,18 @@ public:
     void addBidirectionalEdge(const string& src, const string& dest, double weight);
     vector<string> getVertices();
 
-    // Asegúrate de que esta declaración coincida con la definición en Graph.cpp
+    // AsegÃºrate de que esta declaraciÃ³n coincida con la definiciÃ³n en Graph.cpp
     vector<tuple<string, double, bool>> getNeighbors(const string& vertex) ;
 
     Node* getNode(const string& id);
     bool isDirected();
+
     int getTotalCost(const vector<double>& wayCost, int costPerWeight);
+
+    bool isDirectNeighbor(const std::string& src, const std::string& dest);
+    bool isDoubleWay(const std::string& src, const std::string& dest);
+    int getTotalCost(vector<double> wayCost, int costPerWeigth);
+
     ~Graph();
 };
 
