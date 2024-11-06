@@ -169,7 +169,7 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             sf::Text weightText;
             weightText.setFont(font);
             weightText.setString(weightStream.str());
-            weightText.setCharacterSize(10);  // Tamaño reducido del texto del peso
+            weightText.setCharacterSize(12);  // Tamaño reducido del texto del peso
             weightText.setFillColor(sf::Color::Black);
             weightText.setPosition(midX, midY);
 
@@ -292,6 +292,11 @@ int main() {
     sf::Text costText("Costo total: $0.0", font, 20);
     costText.setFillColor(sf::Color::Black);
     costText.setPosition(500, fixedHeight - 50);
+
+    sf::RectangleShape costTextBackground(sf::Vector2f(200, 30)); 
+    costTextBackground.setFillColor(sf::Color::White);            
+    costTextBackground.setPosition(500, fixedHeight - 50);       
+
 
     sf::RectangleShape dijkstraButton(sf::Vector2f(150, 50));
     dijkstraButton.setFillColor(sf::Color::Green);
@@ -416,7 +421,9 @@ int main() {
         window.draw(dijkstraText);
         window.draw(floydText);
         window.draw(startText);
+        window.draw(costTextBackground);
         window.draw(costText);
+
 
         window.display();
     }
