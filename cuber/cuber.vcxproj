@@ -133,7 +133,6 @@
     <ClCompile Include="Dijkstra.cpp" />
     <ClCompile Include="Floyd.cpp" />
     <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="Incident.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
@@ -141,6 +140,7 @@
     <ClInclude Include="Dijkstra.h" />
     <ClInclude Include="Floyd.h" />
     <ClInclude Include="Graph.h" />
+    <ClInclude Include="Incident.h" />
     <ClInclude Include="Node.h" />
   </ItemGroup>
   <ItemGroup>

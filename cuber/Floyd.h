@@ -6,6 +6,7 @@
 #include <string>
 #include <limits>
 #include <unordered_map>
+#include "Incident.h"
 
 class FloydWarshall {
 public:
@@ -15,7 +16,7 @@ public:
     void calculateShortestPaths();
 
     // Obtiene el camino más corto entre dos nodos específicos
-    std::vector<std::string> getShortestPath(const std::string& start, const std::string& end);
+    std::vector<std::string> getShortestPath(const std::string& start, const std::string& end, const vector<Incident>& incidents);
 
     // Calcula el costo total de transporte entre dos nodos, usando peso y costo de detención
     double calculateTransportCost(const std::string& start, const std::string& end, double costPerWeight, double costPerStop);

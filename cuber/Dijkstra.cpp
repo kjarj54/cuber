@@ -6,7 +6,7 @@
 
 Dijkstra::Dijkstra(Graph* graph) : graph(graph) {}
 
-std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, const std::string& endNodeId) {
+std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, const std::string& endNodeId, const std::vector<Incident>& incidents) {
     std::unordered_map<std::string, double> distances;
     std::unordered_map<std::string, std::string> previous;
     std::priority_queue<std::pair<double, std::string>, std::vector<std::pair<double, std::string>>, std::greater<>> pq;
@@ -34,6 +34,18 @@ std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, 
             double weight;
             bool isBidirectional;
             std::tie(neighborId, weight, isBidirectional) = neighbor;
+
+            bool skipConnection = false;
+            for (const auto& incident : incidents) {
+                if ((incident.fromPoint == currentNode && incident.toPoint == neighborId && incident.direction == "Direccion 1") ||
+                    (incident.fromPoint == neighborId && incident.toPoint == currentNode && incident.direction == "Direccion 2") ||
+                    (incident.fromPoint == currentNode && incident.toPoint == neighborId && incident.direction == "Ambas Direcciones")) {
+                    skipConnection = true;
+                    break;
+                }
+            }
+
+            if (skipConnection) continue;
 
             double newDist = currentDist + weight;
             if (newDist < distances[neighborId]) {
