@@ -20,9 +20,10 @@ void Node::addNeighbor(const string& neighborId, double weight, bool isBidirecti
     neighbors.emplace_back(neighborId, weight, isBidirectional);
 }
 
-vector<tuple<string, double, bool>> Node::getNeighbors() const {
+std::vector<std::tuple<std::string, double, bool>>& Node::getNeighbors() {
     return neighbors;
 }
+
 
 Node::~Node() {
     // Destructor

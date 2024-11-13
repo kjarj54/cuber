@@ -18,6 +18,9 @@ public:
     void addNode(const string& id, float x, float y);
     void addEdge(const string& src, const string& dest, double weight, bool isBidirectional);
     void addBidirectionalEdge(const string& src, const string& dest, double weight);
+    void updateEdgeWeight(const std::string& src, const std::string& dest, double newWeight);
+
+
     vector<string> getVertices();
 
     // Asegúrate de que esta declaración coincida con la definición en Graph.cpp
@@ -27,6 +30,7 @@ public:
     bool isDirected();
 
     int getTotalCost(const vector<double>& wayCost, int costPerWeight);
+    double getEdgeWeight(const std::string& src, const std::string& dest) const;
 
     bool isDirectNeighbor(const std::string& src, const std::string& dest);
     bool isDoubleWay(const std::string& src, const std::string& dest);

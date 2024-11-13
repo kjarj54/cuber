@@ -153,12 +153,24 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             // Determinar el color de la arista
             sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
 
-            // Crear y dibujar la línea entre el nodo y su vecino
-            sf::Vertex line[] = {
-                sf::Vertex(sf::Vector2f(node->getX(), node->getY()), lineColor),
-                sf::Vertex(sf::Vector2f(neighborNode->getX(), neighborNode->getY()), lineColor)
-            };
-            window.draw(line, 2, sf::Lines);
+            // Calcular la posición y la longitud de la línea
+            sf::Vector2f start(node->getX(), node->getY());
+            sf::Vector2f end(neighborNode->getX(), neighborNode->getY());
+            sf::Vector2f direction = end - start;
+
+            float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+            float thickness = 1.5f; // Ancho de la línea
+
+            // Crear un rectángulo para la línea con el grosor deseado
+            sf::RectangleShape line(sf::Vector2f(length, thickness));
+            line.setFillColor(lineColor);
+            line.setPosition(start);
+
+            // Rotar el rectángulo para que apunte hacia el nodo vecino
+            line.setRotation(atan2(direction.y, direction.x) * 180 / 3.14159265f);
+
+            // Dibujar la línea como un rectángulo
+            window.draw(line);
 
             // Calcular la posición del texto del peso en el medio de la arista
             float midX = (node->getX() + neighborNode->getX()) / 2;
@@ -180,6 +192,167 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
         }
     }
 }
+
+
+void adjustTraffic(Graph& graph, const std::string& src, const std::string& dest, int trafficLevel) {
+    // Obtén el peso actual de la arista antes de ajustarlo
+    double currentWeight = graph.getEdgeWeight(src, dest);
+    if (currentWeight <= 0) {
+        std::cerr << "Error: no se encontró el peso de la arista entre " << src << " y " << dest << std::endl;
+        return;
+    }
+
+    // Calcula el nuevo peso multiplicando el peso actual por el nivel de tráfico
+    double newWeight = currentWeight * trafficLevel;
+    graph.updateEdgeWeight(src, dest, newWeight);
+
+    std::cout << "Nuevo peso para la arista " << src << " -> " << dest << ": " << newWeight << std::endl;
+}
+
+
+
+void openTrafficWindow(Graph& graph) {
+    sf::RenderWindow trafficWindow(sf::VideoMode(350, 250), "Ajustar Tráfico", sf::Style::Titlebar | sf::Style::Close);
+
+    sf::Font font;
+    if (!font.loadFromFile("arial.ttf")) {
+        std::cerr << "Error: No se pudo cargar la fuente arial.ttf." << std::endl;
+        return;
+    }
+
+    // Botones de selección de tráfico
+    sf::RectangleShape normalTrafficButton(sf::Vector2f(100, 50));
+    normalTrafficButton.setFillColor(sf::Color::Green);
+    normalTrafficButton.setPosition(200, 60); // Cambiado de 150 a 200 en x
+
+    sf::Text normalText("Normal", font, 18);
+    normalText.setFillColor(sf::Color::Black);
+    normalText.setPosition(215, 70); // Cambiado de 165 a 215 en x
+
+    sf::RectangleShape moderateTrafficButton(sf::Vector2f(100, 50));
+    moderateTrafficButton.setFillColor(sf::Color::Yellow);
+    moderateTrafficButton.setPosition(200, 120); // Cambiado de 150 a 200 en x
+
+    sf::Text moderateText("Moderado", font, 18);
+    moderateText.setFillColor(sf::Color::Black);
+    moderateText.setPosition(205, 130); // Cambiado de 155 a 205 en x
+
+    sf::RectangleShape slowTrafficButton(sf::Vector2f(100, 50));
+    slowTrafficButton.setFillColor(sf::Color::Red);
+    slowTrafficButton.setPosition(200, 180); // Cambiado de 150 a 200 en x
+
+    sf::Text slowText("Lento", font, 18);
+    slowText.setFillColor(sf::Color::Black);
+    slowText.setPosition(215, 190); // Cambiado de 165 a 215 en x
+
+    // Etiquetas y cuadros de texto para "Desde" y "Hasta" puntos
+    sf::Text fromLabel("Desde:", font, 18);
+    fromLabel.setFillColor(sf::Color::Black);
+    fromLabel.setPosition(20, 20);
+
+    sf::Text toLabel("Hasta:", font, 18);
+    toLabel.setFillColor(sf::Color::Black);
+    toLabel.setPosition(20, 80);
+
+    sf::RectangleShape fromBox(sf::Vector2f(100, 25));
+    fromBox.setPosition(80, 20);
+    fromBox.setFillColor(sf::Color(220, 220, 220));
+    fromBox.setOutlineThickness(2);
+
+    sf::RectangleShape toBox(sf::Vector2f(100, 25));
+    toBox.setPosition(80, 80);
+    toBox.setFillColor(sf::Color(220, 220, 220));
+    toBox.setOutlineThickness(2);
+
+    std::string fromStr, toStr;
+    sf::Text fromText(fromStr, font, 18);
+    fromText.setFillColor(sf::Color::Black);
+    fromText.setPosition(85, 22);
+
+    sf::Text toText(toStr, font, 18);
+    toText.setFillColor(sf::Color::Black);
+    toText.setPosition(85, 82);
+
+    bool isFromSelected = false;
+    bool isToSelected = false;
+
+    while (trafficWindow.isOpen()) {
+        sf::Event event;
+        while (trafficWindow.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                trafficWindow.close();
+            }
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (normalTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
+                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 1);
+                    trafficWindow.close();
+                }
+                else if (moderateTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
+                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 2);
+                    trafficWindow.close();
+                }
+                else if (slowTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
+                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 3);
+                    trafficWindow.close();
+                }
+                else if (fromBox.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                    isFromSelected = true;
+                    isToSelected = false;
+                    fromBox.setOutlineColor(sf::Color::Blue); // Indica que el cuadro está seleccionado
+                    toBox.setOutlineColor(sf::Color::Black);
+                }
+                else if (toBox.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                    isFromSelected = false;
+                    isToSelected = true;
+                    toBox.setOutlineColor(sf::Color::Blue); // Indica que el cuadro está seleccionado
+                    fromBox.setOutlineColor(sf::Color::Black);
+                }
+            }
+
+            if (event.type == sf::Event::TextEntered) {
+                if (event.text.unicode < 128) {
+                    char enteredChar = static_cast<char>(event.text.unicode);
+                    if (std::isdigit(enteredChar)) {
+                        if (isFromSelected && fromStr.length() < 3) {
+                            fromStr += enteredChar;
+                        }
+                        else if (isToSelected && toStr.length() < 3) {
+                            toStr += enteredChar;
+                        }
+                    }
+                    else if (event.text.unicode == '\b') {
+                        if (isFromSelected && !fromStr.empty()) {
+                            fromStr.pop_back();
+                        }
+                        else if (isToSelected && !toStr.empty()) {
+                            toStr.pop_back();
+                        }
+                    }
+                    fromText.setString(fromStr);
+                    toText.setString(toStr);
+                }
+            }
+        }
+
+        trafficWindow.clear(sf::Color::White);
+        trafficWindow.draw(fromLabel);
+        trafficWindow.draw(fromBox);
+        trafficWindow.draw(fromText);
+        trafficWindow.draw(toLabel);
+        trafficWindow.draw(toBox);
+        trafficWindow.draw(toText);
+
+        trafficWindow.draw(normalTrafficButton);
+        trafficWindow.draw(normalText);
+        trafficWindow.draw(moderateTrafficButton);
+        trafficWindow.draw(moderateText);
+        trafficWindow.draw(slowTrafficButton);
+        trafficWindow.draw(slowText);
+
+        trafficWindow.display();
+    }
+}
+
 
 
 // Función para abrir la ventana de incidentes y añadir uno nuevo
@@ -417,17 +590,30 @@ void openIncidentWindow(Graph& graph) {
 
 
 void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
+    float pathThickness = 5.0f; // Ajusta este valor para el grosor deseado de la línea del camino
+
     for (size_t i = 0; i < path.size() - 1; ++i) {
         Node* node = graph.getNode(path[i]);
         Node* nextNode = graph.getNode(path[i + 1]);
 
-        sf::Vertex line[] = {
-            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), sf::Color::Green),
-            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), sf::Color::Green)
-        };
-        window.draw(line, 2, sf::Lines);
+        // Calcular posición inicial y final
+        sf::Vector2f start(node->getX(), node->getY());
+        sf::Vector2f end(nextNode->getX(), nextNode->getY());
+        sf::Vector2f direction = end - start;
+
+        // Calcular la longitud de la línea y crear el rectángulo para representarla
+        float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
+        sf::RectangleShape line(sf::Vector2f(length, pathThickness));
+        line.setFillColor(sf::Color::Green);
+
+        // Establecer posición y rotación para que la línea se alinee entre los nodos
+        line.setPosition(start);
+        line.setRotation(std::atan2(direction.y, direction.x) * 180 / 3.14159f);
+
+        window.draw(line);
     }
 }
+
 
 
 string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
@@ -524,6 +710,7 @@ int main()
     enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
     Algorithm selectedAlgorithm = DIJKSTRA;
 
+    // Texto y fondo para el costo
     sf::Text costText("Costo total: $0.0", font, 20);
     costText.setFillColor(sf::Color::Black);
     costText.setPosition(500, fixedHeight - 50);
@@ -531,6 +718,8 @@ int main()
     sf::RectangleShape costTextBackground(sf::Vector2f(200, 30));
     costTextBackground.setFillColor(sf::Color::White);
     costTextBackground.setPosition(500, fixedHeight - 50);
+
+    // Botones de algoritmos
     sf::RectangleShape dijkstraButton(sf::Vector2f(150, 50));
     dijkstraButton.setFillColor(sf::Color::Green);
     dijkstraButton.setPosition(10, fixedHeight - 60);
@@ -558,10 +747,33 @@ int main()
     float costPerWeight = 0.5f; // Valor por unidad de distancia
     float costPerStop = 1.0f;   // Valor por cada nodo de detención
 
-    // Crear botón para abrir el menú
+    // Crear botón de "Incidentes"
     sf::RectangleShape menuButton(sf::Vector2f(100, 50));
     menuButton.setFillColor(sf::Color::Green);
-    menuButton.setPosition(fixedWidth - 110, 10); // Posición en la esquina superior derecha
+    menuButton.setPosition(fixedWidth - 110, 10);
+
+    sf::Text buttonText("Incidentes", font, 20);
+    buttonText.setFillColor(sf::Color::Black);
+    sf::FloatRect textRect = buttonText.getLocalBounds();
+    buttonText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+    buttonText.setPosition(
+        menuButton.getPosition().x + menuButton.getSize().x / 2.0f,
+        menuButton.getPosition().y + menuButton.getSize().y / 2.0f
+    );
+
+    // Crear botón de "Tráfico"
+    sf::RectangleShape trafficButton(sf::Vector2f(100, 50));
+    trafficButton.setFillColor(sf::Color::Yellow);
+    trafficButton.setPosition(fixedWidth - 110, 70);
+
+    sf::Text trafficButtonText("Tráfico", font, 20);
+    trafficButtonText.setFillColor(sf::Color::Black);
+    sf::FloatRect trafficTextRect = trafficButtonText.getLocalBounds();
+    trafficButtonText.setOrigin(trafficTextRect.left + trafficTextRect.width / 2.0f, trafficTextRect.top + trafficTextRect.height / 2.0f);
+    trafficButtonText.setPosition(
+        trafficButton.getPosition().x + trafficButton.getSize().x / 2.0f,
+        trafficButton.getPosition().y + trafficButton.getSize().y / 2.0f
+    );
 
     while (window.isOpen())
     {
@@ -575,9 +787,24 @@ int main()
             {
                 float mouseX = event.mouseButton.x;
                 float mouseY = event.mouseButton.y;
-                if (menuButton.getGlobalBounds().contains(mouseX, mouseY))
-                {
+
+                if (menuButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     openIncidentWindow(graph);
+                }
+                if (trafficButton.getGlobalBounds().contains(mouseX, mouseY)) {
+                    openTrafficWindow(graph);
+                    if (!startNodeId.empty() && !endNodeId.empty()) {
+                        if (selectedAlgorithm == DIJKSTRA) {
+                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
+                        }
+                        else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                            floydWarshall.calculateShortestPaths();
+                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
+                        }
+
+                        // Confirmación visual o mensaje de depuración
+                        std::cout << "Ruta recalculada después de ajuste de tráfico." << std::endl;
+                    }
                 }
                 if (dijkstraButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     selectedAlgorithm = DIJKSTRA;
@@ -606,8 +833,6 @@ int main()
                         float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
                         std::ostringstream costStream;
                         costStream << std::fixed << std::setprecision(4) << totalTransportCost;
-
-                        // Asignar el costo al texto con el símbolo de colón
                         costText.setString("Costo total: $" + costStream.str());
                     }
                 }
@@ -628,13 +853,12 @@ int main()
                     }
                 }
             }
-
         }
 
         window.clear();
         window.draw(sprite);
 
-        // Dibujar el grafo completo
+        // Dibujar elementos del grafo
         drawGraph(window, graph, font);
 
         // Dibujar la ruta específica en azul
@@ -663,8 +887,11 @@ int main()
             window.draw(carSprite);
         }
 
-        // Dibujar botón de menú
+        // Dibujar botones y texto
         window.draw(menuButton);
+        window.draw(buttonText);
+        window.draw(trafficButton);
+        window.draw(trafficButtonText);
         window.draw(dijkstraButton);
         window.draw(floydButton);
         window.draw(startButton);
