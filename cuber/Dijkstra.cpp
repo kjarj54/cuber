@@ -35,11 +35,15 @@ std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, 
             bool isBidirectional;
             std::tie(neighborId, weight, isBidirectional) = neighbor;
 
+            // Verificar si hay un incidente que afecta esta conexión
             bool skipConnection = false;
             for (const auto& incident : incidents) {
+                // Verificar Dirección 1, Dirección 2, y Ambas Direcciones
                 if ((incident.fromPoint == currentNode && incident.toPoint == neighborId && incident.direction == "Direccion 1") ||
                     (incident.fromPoint == neighborId && incident.toPoint == currentNode && incident.direction == "Direccion 2") ||
-                    (incident.fromPoint == currentNode && incident.toPoint == neighborId && incident.direction == "Ambas Direcciones")) {
+                    ((incident.fromPoint == currentNode && incident.toPoint == neighborId) ||
+                        (incident.fromPoint == neighborId && incident.toPoint == currentNode)) &&
+                    incident.direction == "Ambas Direcciones") {
                     skipConnection = true;
                     break;
                 }

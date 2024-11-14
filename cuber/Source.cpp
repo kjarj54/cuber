@@ -450,13 +450,22 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
     dir2Text.setPosition(210, 275);
     dir2Text.setFillColor(sf::Color::Black);
 
+    // Botón para cerrar ambas direcciones
+    sf::RectangleShape bothDirectionsButton(sf::Vector2f(300, 30));
+    bothDirectionsButton.setPosition(50, 310);
+    bothDirectionsButton.setFillColor(sf::Color::Magenta);
+
+    sf::Text bothDirectionsText("Cerrar ambas direcciones", font, 14);
+    bothDirectionsText.setPosition(60, 315);
+    bothDirectionsText.setFillColor(sf::Color::Black);
+
     // Botón de confirmación
     sf::RectangleShape confirmButton(sf::Vector2f(150, 30));
-    confirmButton.setPosition(125, 330);
+    confirmButton.setPosition(125, 360);
     confirmButton.setFillColor(sf::Color::Red);
 
     sf::Text confirmButtonText("Confirmar Incidente", font, 14);
-    confirmButtonText.setPosition(130, 335);
+    confirmButtonText.setPosition(130, 365);
     confirmButtonText.setFillColor(sf::Color::White);
 
     while (incidentWindow.isOpen()) {
@@ -523,6 +532,12 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
                     selectedDirection = "Direccion 2";
                     dir2Button.setFillColor(sf::Color::Yellow);
                     dir1Button.setFillColor(sf::Color::Cyan);
+                }
+                else if (bothDirectionsButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                    selectedDirection = "Ambas Direcciones";
+                    bothDirectionsButton.setFillColor(sf::Color::Yellow);
+                    dir1Button.setFillColor(sf::Color::Cyan);
+                    dir2Button.setFillColor(sf::Color::Cyan);
                 }
 
                 if (confirmButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
@@ -609,6 +624,8 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
             incidentWindow.draw(dir1Text);
             incidentWindow.draw(dir2Button);
             incidentWindow.draw(dir2Text);
+            incidentWindow.draw(bothDirectionsButton);
+            incidentWindow.draw(bothDirectionsText);
         }
 
         incidentWindow.draw(confirmButtonText);
@@ -1014,37 +1031,61 @@ int main()
 
         if (!shortestPath.empty()) {
             drawShortestPath(window, graph, shortestPath, incidents);
+
+            // Controlar la animación del carro si hay un camino disponible
             if (animateCar && pathIndex < shortestPath.size() - 1) {
                 Node* currentNode = graph.getNode(shortestPath[pathIndex]);
                 Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
 
-                sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
-                sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
-                sf::Vector2f direction = nextPos - currentPos;
+                // Verificar si la conexión actual está afectada por un incidente en ambas direcciones
+                bool isConnectionBlocked = false;
+                for (const auto& incident : incidents) {
+                    if (((incident.fromPoint == shortestPath[pathIndex] && incident.toPoint == shortestPath[pathIndex + 1]) ||
+                        (incident.fromPoint == shortestPath[pathIndex + 1] && incident.toPoint == shortestPath[pathIndex])) &&
+                        incident.direction == "Ambas Direcciones") {
+                        isConnectionBlocked = true;
+                        break;
+                    }
+                }
 
-                float distance = sqrt(direction.x * direction.x + direction.y * direction.y);
-                if (distance != 0) direction /= distance;
+                // Si la conexión está bloqueada, detener la animación
+                if (isConnectionBlocked) {
+                    animateCar = false;  // Detener la animación
+                    std::cout << "Conexión bloqueada en ambas direcciones entre " << shortestPath[pathIndex]
+                        << " y " << shortestPath[pathIndex + 1] << ". Animación detenida." << std::endl;
+                }
+                else {
+                    // Continuar la animación si la conexión no está bloqueada
+                    sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
+                    sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
+                    sf::Vector2f direction = nextPos - currentPos;
 
-                carSprite.move(direction * 2.0f);
+                    float distance = sqrt(direction.x * direction.x + direction.y * direction.y);
+                    if (distance != 0) direction /= distance;
 
-                if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
-                    pathIndex++;
-                    carSprite.setPosition(nextPos);
+                    carSprite.move(direction * 2.0f);
 
-                    if (pathIndex == shortestPath.size() - 1) {
-                        animateCar = false;
-                        timerRunning = false;
+                    if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
+                        pathIndex++;
+                        carSprite.setPosition(nextPos);
 
-                        elapsedTime = clock.getElapsedTime();
-                        totalElapsedTime = elapsedTime.asSeconds();
+                        // Verificar si el carro llegó al destino final
+                        if (pathIndex == shortestPath.size() - 1) {
+                            animateCar = false;
+                            timerRunning = false;
 
-                        float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop, totalElapsedTime);
-                        std::ostringstream costStream;
-                        costStream << std::fixed << std::setprecision(4) << totalTransportCost;
-                        costText.setString("Costo total: $" + costStream.str());
+                            elapsedTime = clock.getElapsedTime();
+                            totalElapsedTime = elapsedTime.asSeconds();
 
-                        // Llamar a resetApplication después de llegar al destino
-                        resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
+                            // Calcular y mostrar el costo total de transporte
+                            float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop, totalElapsedTime);
+                            std::ostringstream costStream;
+                            costStream << std::fixed << std::setprecision(4) << totalTransportCost;
+                            costText.setString("Costo total: $" + costStream.str());
+
+                            // Llamar a resetApplication después de llegar al destino
+                            resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
+                        }
                     }
                 }
             }
