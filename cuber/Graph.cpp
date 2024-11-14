@@ -21,6 +21,10 @@ void Graph::addEdge(const string& src, const string& dest, double weight, bool i
 }
 
 
+
+
+
+
 void Graph::addBidirectionalEdge(const string& src, const string& dest, double weight) {
     if (nodes.find(src) == nodes.end() || nodes.find(dest) == nodes.end()) {
         return;
@@ -67,6 +71,43 @@ Node* Graph::getNode(const string& id) {
 bool Graph::isDirected() {
     return directed;
 }
+
+double Graph::getEdgeWeight(const std::string& src, const std::string& dest) const {
+    if (nodes.find(src) != nodes.end()) {
+        for (const auto& neighbor : nodes.at(src)->getNeighbors()) {
+            if (std::get<0>(neighbor) == dest) {
+                return std::get<1>(neighbor); // Devuelve el peso de la arista
+            }
+        }
+    }
+    // Si no se encuentra la arista, devuelve -1 para indicar que no existe
+    return -1.0;
+}
+
+void Graph::updateEdgeWeight(const std::string& src, const std::string& dest, double newWeight) {
+    if (nodes.find(src) != nodes.end() && nodes.find(dest) != nodes.end()) {
+        for (auto& neighbor : nodes[src]->getNeighbors()) {
+            if (std::get<0>(neighbor) == dest) {
+                std::get<1>(neighbor) = newWeight;  // Actualiza el peso
+                std::cout << "Peso actualizado para " << src << " -> " << dest << ": " << newWeight << std::endl;
+                break;
+            }
+        }
+        if (!directed || isDoubleWay(src, dest)) {
+            for (auto& neighbor : nodes[dest]->getNeighbors()) {
+                if (std::get<0>(neighbor) == src) {
+                    std::get<1>(neighbor) = newWeight;  // Actualiza el peso en la dirección opuesta
+                    std::cout << "Peso actualizado para " << dest << " -> " << src << ": " << newWeight << std::endl;
+                    break;
+                }
+            }
+        }
+    }
+    else {
+        std::cerr << "Error: Uno de los nodos no existe en el grafo." << std::endl;
+    }
+}
+
 
 
 // Verifica si 'dest' es vecino directo de 'src'

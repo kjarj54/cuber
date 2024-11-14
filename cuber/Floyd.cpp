@@ -20,10 +20,21 @@ void FloydWarshall::initializeMatrices() {
         ++index;
     }
 
+    updateMatrices(); // Llama a la función para cargar inicialmente la matriz
+}
+
+void FloydWarshall::updateMatrices() {
+    // Restablece los valores de la matriz de distancias y de caminos
+    int n = graph->getVertices().size();
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            distMatrix[i][j] = (i == j) ? 0 : std::numeric_limits<double>::infinity();
+            nextNode[i][j] = -1;
+        }
+    }
+
     for (const auto& vertex : graph->getVertices()) {
         int u = nodeIndex[vertex];
-        distMatrix[u][u] = 0;
-
         for (const auto& neighbor : graph->getNeighbors(vertex)) {
             std::string neighborId;
             double weight;
@@ -40,6 +51,7 @@ void FloydWarshall::initializeMatrices() {
             }
         }
     }
+    calculateShortestPaths(); // Recalcula los caminos más cortos con la matriz actualizada
 }
 
 void FloydWarshall::calculateShortestPaths() {
@@ -112,4 +124,3 @@ double FloydWarshall::calculateTransportCost(const std::string& start, const std
 
     return totalCost;
 }
-
