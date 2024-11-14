@@ -770,6 +770,8 @@ void resetApplication(Graph& graph, sf::Text& costText, std::vector<std::string>
 
     // Reiniciar algoritmo seleccionado (ninguno por defecto)
     selectedAlgorithm = DIJKSTRA;
+    // Reiniciar los incidentes puestos anteriormente
+    incidents = {};
 }
 
 
