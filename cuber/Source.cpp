@@ -14,8 +14,7 @@
 using namespace std;
 
 std::vector<Incident> incidents;
-const float costPerWeight = 0.01f;
-const float costPerStop = 0.01f;
+
 float totalTransportCost = 0.0f;
 
 void loadVerticesFromFile(Graph& graph, const string& filename) {
@@ -120,7 +119,6 @@ void loadGraphFromFile(Graph& graph, const std::string& filename) {
     file.close();
 }
 
-
 void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
     for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
@@ -193,8 +191,7 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
     }
 }
 
-
-void adjustTraffic(Graph& graph, const std::string& src, const std::string& dest, int trafficLevel) {
+void adjustTraffic(Graph& graph, FloydWarshall& floydWarshall, const std::string& src, const std::string& dest, int trafficLevel) {
     // Obtén el peso actual de la arista antes de ajustarlo
     double currentWeight = graph.getEdgeWeight(src, dest);
     if (currentWeight <= 0) {
@@ -207,11 +204,12 @@ void adjustTraffic(Graph& graph, const std::string& src, const std::string& dest
     graph.updateEdgeWeight(src, dest, newWeight);
 
     std::cout << "Nuevo peso para la arista " << src << " -> " << dest << ": " << newWeight << std::endl;
+
+    // Actualiza las matrices de Floyd-Warshall para reflejar el nuevo peso
+    floydWarshall.updateMatrices();  // Asegúrate de que `updateMatrices` esté implementado en FloydWarshall
 }
 
-
-
-void openTrafficWindow(Graph& graph) {
+void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
     sf::RenderWindow trafficWindow(sf::VideoMode(350, 250), "Ajustar Tráfico", sf::Style::Titlebar | sf::Style::Close);
 
     sf::Font font;
@@ -220,30 +218,30 @@ void openTrafficWindow(Graph& graph) {
         return;
     }
 
-    // Botones de selección de tráfico
+    // Botones de selección de tráfico y configuración de cuadros de texto
     sf::RectangleShape normalTrafficButton(sf::Vector2f(100, 50));
     normalTrafficButton.setFillColor(sf::Color::Green);
-    normalTrafficButton.setPosition(200, 60); // Cambiado de 150 a 200 en x
+    normalTrafficButton.setPosition(200, 60);
 
     sf::Text normalText("Normal", font, 18);
     normalText.setFillColor(sf::Color::Black);
-    normalText.setPosition(215, 70); // Cambiado de 165 a 215 en x
+    normalText.setPosition(215, 70);
 
     sf::RectangleShape moderateTrafficButton(sf::Vector2f(100, 50));
     moderateTrafficButton.setFillColor(sf::Color::Yellow);
-    moderateTrafficButton.setPosition(200, 120); // Cambiado de 150 a 200 en x
+    moderateTrafficButton.setPosition(200, 120);
 
     sf::Text moderateText("Moderado", font, 18);
     moderateText.setFillColor(sf::Color::Black);
-    moderateText.setPosition(205, 130); // Cambiado de 155 a 205 en x
+    moderateText.setPosition(205, 130);
 
     sf::RectangleShape slowTrafficButton(sf::Vector2f(100, 50));
     slowTrafficButton.setFillColor(sf::Color::Red);
-    slowTrafficButton.setPosition(200, 180); // Cambiado de 150 a 200 en x
+    slowTrafficButton.setPosition(200, 180);
 
     sf::Text slowText("Lento", font, 18);
     slowText.setFillColor(sf::Color::Black);
-    slowText.setPosition(215, 190); // Cambiado de 165 a 215 en x
+    slowText.setPosition(215, 190);
 
     // Etiquetas y cuadros de texto para "Desde" y "Hasta" puntos
     sf::Text fromLabel("Desde:", font, 18);
@@ -284,27 +282,30 @@ void openTrafficWindow(Graph& graph) {
             }
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (normalTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
-                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 1);
+                    adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 1);
+                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
                     trafficWindow.close();
                 }
                 else if (moderateTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
-                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 2);
+                    adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 2);
+                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
                     trafficWindow.close();
                 }
                 else if (slowTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
-                    adjustTraffic(graph, "Node" + fromStr, "Node" + toStr, 3);
+                    adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 3);
+                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
                     trafficWindow.close();
                 }
                 else if (fromBox.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
                     isFromSelected = true;
                     isToSelected = false;
-                    fromBox.setOutlineColor(sf::Color::Blue); // Indica que el cuadro está seleccionado
+                    fromBox.setOutlineColor(sf::Color::Blue);
                     toBox.setOutlineColor(sf::Color::Black);
                 }
                 else if (toBox.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
                     isFromSelected = false;
                     isToSelected = true;
-                    toBox.setOutlineColor(sf::Color::Blue); // Indica que el cuadro está seleccionado
+                    toBox.setOutlineColor(sf::Color::Blue);
                     fromBox.setOutlineColor(sf::Color::Black);
                 }
             }
@@ -354,8 +355,6 @@ void openTrafficWindow(Graph& graph) {
 }
 
 
-
-// Función para abrir la ventana de incidentes y añadir uno nuevo
 void openIncidentWindow(Graph& graph) {
     sf::RenderWindow incidentWindow(sf::VideoMode(400, 400), "Reportar Incidente", sf::Style::Titlebar | sf::Style::Close);
 
@@ -588,7 +587,6 @@ void openIncidentWindow(Graph& graph) {
     }
 }
 
-
 void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
     float pathThickness = 5.0f; // Ajusta este valor para el grosor deseado de la línea del camino
 
@@ -614,8 +612,6 @@ void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<
     }
 }
 
-
-
 string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) {
     for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
@@ -631,33 +627,56 @@ string findNodeAtPosition(Graph& graph, float x, float y, float radius = 20.0f) 
     return "";
 }
 
-
-float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop) {
+float calculateTransportCost(const std::vector<std::string>& path, Graph& graph, float costPerWeight, float costPerStop, float elapsedTime) {
     float totalCost = 0.0f;
+    float totalWeight = 0.0f; // Acumula el peso total del camino
+
+    std::cout << "Desglose detallado del cálculo de transporte:\n";
+    std::cout << "--------------------------------------------\n";
 
     for (size_t i = 0; i < path.size() - 1; ++i) {
-        Node* currentNode = graph.getNode(path[i]);
-        Node* nextNode = graph.getNode(path[i + 1]);
+        std::string currentNode = path[i];
+        std::string nextNode = path[i + 1];
 
-        sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
-        sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
+        // Obtén el peso directamente desde el grafo
+        float edgeWeight = graph.getEdgeWeight(currentNode, nextNode);
+        if (edgeWeight < 0) {
+            std::cerr << "Error: No se encontró una arista válida entre " << currentNode << " y " << nextNode << "\n";
+            continue;
+        }
 
-        // Calcular la distancia/peso entre los nodos
-        float distance = sqrt(pow(nextPos.x - currentPos.x, 2) + pow(nextPos.y - currentPos.y, 2)) / 100.0f;
-        float weightCost = distance * costPerWeight;
-
-        // Agregar el costo de detención para el nodo actual
+        float weightCost = edgeWeight * costPerWeight;
         float stopCost = costPerStop;
 
-        // Sumar los costos de peso y detención al costo total
+        totalWeight += edgeWeight; // Suma el peso actual al peso total
         totalCost += weightCost + stopCost;
+
+        // Mensajes de depuración detallados
+        std::cout << "Segmento: " << currentNode << " -> " << nextNode << "\n";
+        std::cout << " - Peso de la arista: " << edgeWeight << "\n";
+        std::cout << " - Costo por peso en este segmento: $" << weightCost << "\n";
+        std::cout << " - Costo de detención en este segmento: $" << stopCost << "\n";
+        std::cout << " - Costo acumulado hasta ahora: $" << totalCost << "\n\n";
     }
 
-    // Agregar el costo de detención para el último nodo (si es necesario)
+    // Agregar el costo de detención para el último nodo
     totalCost += costPerStop;
+    std::cout << "Costo de detención final: $" << costPerStop << "\n";
+
+    // Sumar el costo basado en el tiempo transcurrido
+    float timeCost = elapsedTime;
+    totalCost += timeCost;
+
+    // Mensajes finales de depuración
+    std::cout << "--------------------------------------------\n";
+    std::cout << "Tiempo total transcurrido: " << elapsedTime << " s\n";
+    std::cout << "Peso total del recorrido: " << totalWeight << "\n";
+    std::cout << "Costo total de transporte: $" << totalCost << "\n";
+    std::cout << "--------------------------------------------\n";
 
     return totalCost;
 }
+
 
 
 int main()
@@ -744,6 +763,13 @@ int main()
     startText.setFillColor(sf::Color::Black);
     startText.setPosition(350, fixedHeight - 50);
 
+    // Cronómetro y texto del cronómetro
+    sf::Clock clock;
+    sf::Text timerText("", font, 20);
+    timerText.setFillColor(sf::Color::Black);
+    timerText.setPosition(10, 10);
+    bool timerRunning = false;
+
     float costPerWeight = 0.5f; // Valor por unidad de distancia
     float costPerStop = 1.0f;   // Valor por cada nodo de detención
 
@@ -792,17 +818,18 @@ int main()
                     openIncidentWindow(graph);
                 }
                 if (trafficButton.getGlobalBounds().contains(mouseX, mouseY)) {
-                    openTrafficWindow(graph);
+                    openTrafficWindow(graph, floydWarshall);
+                
+                    floydWarshall.updateMatrices(); // Actualiza la matriz después de ajustar el tráfico
+
+                    // Recalcula la ruta más corta tras la actualización de matrices
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
                             shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
                         }
                         else if (selectedAlgorithm == FLOYD_WARSHALL) {
-                            floydWarshall.calculateShortestPaths();
                             shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
                         }
-
-                        // Confirmación visual o mensaje de depuración
                         std::cout << "Ruta recalculada después de ajuste de tráfico." << std::endl;
                     }
                 }
@@ -820,6 +847,7 @@ int main()
                             shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
                         }
                         else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                            floydWarshall.updateMatrices(); // Asegúrate de que la matriz esté actualizada
                             shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
                         }
                         pathIndex = 0;
@@ -830,15 +858,13 @@ int main()
                             carSprite.setPosition(startNode->getX(), startNode->getY());
                         }
 
-                        float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
-                        std::ostringstream costStream;
-                        costStream << std::fixed << std::setprecision(4) << totalTransportCost;
-                        costText.setString("Costo total: $" + costStream.str());
+                        // Inicia el cronómetro
+                        clock.restart();
+                        timerRunning = true;
                     }
                 }
                 else {
                     string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
-
                     if (!clickedNode.empty()) {
                         if (selectingStartNode) {
                             startNodeId = clickedNode;
@@ -853,6 +879,14 @@ int main()
                     }
                 }
             }
+        }
+
+        // Actualiza el cronómetro
+        if (timerRunning) {
+            sf::Time elapsedTime = clock.getElapsedTime();
+            std::ostringstream timerStream;
+            timerStream << "Tiempo: " << std::fixed << std::setprecision(2) << elapsedTime.asSeconds() << " s";
+            timerText.setString(timerStream.str());
         }
 
         window.clear();
@@ -881,9 +915,23 @@ int main()
                 if (sqrt(pow(carSprite.getPosition().x - nextPos.x, 2) + pow(carSprite.getPosition().y - nextPos.y, 2)) < 2.0f) {
                     pathIndex++;
                     carSprite.setPosition(nextPos);
+
+                    // Verifica si el carro ha llegado al último nodo
+                    if (pathIndex == shortestPath.size() - 1) {
+                        animateCar = false;  // Detiene la animación
+                        timerRunning = false; // Detiene el cronómetro
+
+                        // Calcula el costo total con el tiempo transcurrido
+                        sf::Time elapsedTime = clock.getElapsedTime();
+                        float totalElapsedTime = elapsedTime.asSeconds();
+
+                        float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop, totalElapsedTime);
+                        std::ostringstream costStream;
+                        costStream << std::fixed << std::setprecision(4) << totalTransportCost;
+                        costText.setString("Costo total: $" + costStream.str());
+                    }
                 }
             }
-
             window.draw(carSprite);
         }
 
@@ -900,6 +948,7 @@ int main()
         window.draw(startText);
         window.draw(costTextBackground);
         window.draw(costText);
+        window.draw(timerText);
 
         window.display();
     }
