@@ -360,8 +360,6 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
     }
 }
 
-
-
 // Función para abrir la ventana de incidentes y añadir uno nuevo
 void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string>& shortestPath, FloydWarshall& floydWarshall, Dijkstra& dijkstra, string startNodeId, string endNodeId, sf::Text& costText, sf::Sprite& carSprite, bool& animateCar) {
 
@@ -635,7 +633,6 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
     }
 }
 
-
 void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path, const std::vector<Incident>& incidents, bool isOriginal = false) {
     
 
@@ -790,9 +787,6 @@ void resetApplication(Graph& graph, sf::Text& costText, std::vector<std::string>
     // Reiniciar los incidentes puestos anteriormente
     incidents = {};
 }
-
-
-
 
 int main()
 {

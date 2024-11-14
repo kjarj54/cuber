@@ -7,33 +7,28 @@
 Dijkstra::Dijkstra(Graph* graph) : graph(graph) {}
 
 std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, const std::string& endNodeId, const std::vector<Incident>& incidents) {
-    std::unordered_map<std::string, double> distances;
+    std::unordered_map<std::string, int> distances;  // Cambiado a int para contar saltos
     std::unordered_map<std::string, std::string> previous;
-    std::priority_queue<std::pair<double, std::string>, std::vector<std::pair<double, std::string>>, std::greater<>> pq;
+    std::queue<std::string> q;  // Usamos una cola simple para BFS
 
-    // Inicializar todas las distancias como "infinito"
+    // Inicializar todas las distancias como "infinito" (máximo de saltos)
     for (const auto& vertex : graph->getVertices()) {
-        distances[vertex] = std::numeric_limits<double>::infinity();
+        distances[vertex] = std::numeric_limits<int>::max();
     }
 
-    distances[startNodeId] = 0.0;
-    pq.push({ 0.0, startNodeId });
+    distances[startNodeId] = 0;
+    q.push(startNodeId);
 
-    while (!pq.empty()) {
-        auto top = pq.top();
-        double currentDist = top.first;
-        std::string currentNode = top.second;
-        pq.pop();
+    while (!q.empty()) {
+        std::string currentNode = q.front();
+        q.pop();
 
         if (currentNode == endNodeId) break;
 
-        if (currentDist > distances[currentNode]) continue;
-
         for (const auto& neighbor : graph->getNeighbors(currentNode)) {
             std::string neighborId;
-            double weight;
             bool isBidirectional;
-            std::tie(neighborId, weight, isBidirectional) = neighbor;
+            std::tie(neighborId, std::ignore, isBidirectional) = neighbor;  // Ignoramos el peso
 
             // Verificar si hay un incidente que afecta esta conexión
             bool skipConnection = false;
@@ -51,11 +46,12 @@ std::vector<std::string> Dijkstra::shortestPath(const std::string& startNodeId, 
 
             if (skipConnection) continue;
 
-            double newDist = currentDist + weight;
+            // Sumamos 1 para representar un salto, en lugar de usar el peso de la arista
+            int newDist = distances[currentNode] + 1;
             if (newDist < distances[neighborId]) {
                 distances[neighborId] = newDist;
                 previous[neighborId] = currentNode;
-                pq.push({ newDist, neighborId });
+                q.push(neighborId);  // Añadir vecino a la cola
             }
         }
     }
