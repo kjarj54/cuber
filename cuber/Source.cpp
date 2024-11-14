@@ -823,6 +823,7 @@ int main()
     sf::Text startText("Iniciar", font, 20);
     startText.setFillColor(sf::Color::Black);
     startText.setPosition(350, fixedHeight - 50);
+   
 
     // Cronómetro y texto del cronómetro
     sf::Clock clock;
@@ -917,9 +918,9 @@ int main()
                         pathIndex = 0;
                         animateCar = true;
 
-                        if (!shortestPath.empty() && !originalPathSet) {
-                            originalPath = shortestPath; // Guardar la ruta original solo la primera vez
-                            originalPathSet = true;
+                        originalPath.clear();
+                        if (!shortestPath.empty()) {
+                            originalPath = shortestPath;
                         }
 
                         if (!shortestPath.empty()) {
