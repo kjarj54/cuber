@@ -20,7 +20,8 @@ public:
     float getY() const;
 
     void addNeighbor(const string& neighborId, double weight, bool isBidirectional);
-    vector<tuple<string, double, bool>> getNeighbors() const;
+    std::vector<std::tuple<std::string, double, bool>>& getNeighbors();
+
 
     ~Node();
 };
