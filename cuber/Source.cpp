@@ -736,6 +736,43 @@ float calculateTransportCost(const std::vector<std::string>& path, Graph& graph,
     return totalCost;
 }
 
+// Declaración de la función de reinicio
+void resetApplication(Graph& graph, sf::Text& costText, std::vector<std::string>& shortestPath,
+    std::vector<std::string>& originalPath, size_t& pathIndex, bool& animateCar,
+    bool& timerRunning, sf::Clock& clock, float& totalElapsedTime, sf::Sprite& carSprite,
+    std::string& startNodeId, std::string& endNodeId, bool& selectingStartNode,
+    Algorithm& selectedAlgorithm, bool buttonPressed, sf::Text& timerText) { // Cambiar a referencia
+
+    // Reiniciar variables de selección y costos
+    
+    if (buttonPressed) {
+        costText.setString("Costo total: $0.0");
+        timerText.setString("Tiempo: 0.0 s");  // Reiniciar el texto del cronómetro
+        shortestPath.clear();
+        originalPath.clear();
+    }
+
+    pathIndex = 0;
+    animateCar = false;
+    timerRunning = false;
+    totalElapsedTime = 0.0f;
+
+    // Reiniciar el cronómetro a cero
+    clock.restart();
+
+    // Reiniciar posiciones de nodos seleccionados y variables de control
+    startNodeId = "";
+    endNodeId = "";
+    selectingStartNode = true;
+
+    // Reposicionar el carro fuera de vista o en la posición inicial
+    carSprite.setPosition(-100, -100); // Fuera de la vista principal
+
+    // Reiniciar algoritmo seleccionado (ninguno por defecto)
+    selectedAlgorithm = DIJKSTRA;
+}
+
+
 
 
 int main()
@@ -863,6 +900,19 @@ int main()
         trafficButton.getPosition().y + trafficButton.getSize().y / 2.0f
     );
 
+    sf::RectangleShape resetButton(sf::Vector2f(100, 50));
+    resetButton.setFillColor(sf::Color::Red);
+    resetButton.setPosition(fixedWidth - 110, 130);
+
+    sf::Text resetButtonText("Reiniciar", font, 20);
+    resetButtonText.setFillColor(sf::Color::Black);
+    sf::FloatRect resetTextRect = resetButtonText.getLocalBounds();
+    resetButtonText.setOrigin(resetTextRect.left + resetTextRect.width / 2.0f, resetTextRect.top + resetTextRect.height / 2.0f);
+    resetButtonText.setPosition(
+        resetButton.getPosition().x + resetButton.getSize().x / 2.0f,
+        resetButton.getPosition().y + resetButton.getSize().y / 2.0f
+    );
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -879,19 +929,15 @@ int main()
                 if (menuButton.getGlobalBounds().contains(mouseX, mouseY))
                 {
                     openIncidentWindow(graph, selectedAlgorithm, shortestPath, floydWarshall, dijkstra, startNodeId, endNodeId, costText, carSprite, animateCar);
-
                 }
                 if (trafficButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     openTrafficWindow(graph, floydWarshall);
-                
-                    floydWarshall.updateMatrices(); // Actualiza la matriz después de ajustar el tráfico
+                    floydWarshall.updateMatrices();
 
-                    // Recalcula la ruta más corta tras la actualización de matrices
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
                             shortestPath = dijkstra.shortestPath(startNodeId, endNodeId, incidents);
-                        }
-                        else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                        } else if (selectedAlgorithm == FLOYD_WARSHALL) {
                             shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
                         }
                         std::cout << "Ruta recalculada después de ajuste de tráfico." << std::endl;
@@ -909,19 +955,12 @@ int main()
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
                             shortestPath = dijkstra.shortestPath(startNodeId, endNodeId, incidents);
-                        }
-                        else if (selectedAlgorithm == FLOYD_WARSHALL) {
-
+                        } else if (selectedAlgorithm == FLOYD_WARSHALL) {
                             shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
-
                         }
                         pathIndex = 0;
                         animateCar = true;
-
-                        originalPath.clear();
-                        if (!shortestPath.empty()) {
-                            originalPath = shortestPath;
-                        }
+                        originalPath = shortestPath;
 
                         if (!shortestPath.empty()) {
                             Node* startNode = graph.getNode(shortestPath[0]);
@@ -933,6 +972,10 @@ int main()
                         timerRunning = true;
                     }
                 }
+                // Verificar si se presionó el botón de reinicio
+                else if (resetButton.getGlobalBounds().contains(mouseX, mouseY)) {
+                    resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, true, timerText);
+                }
                 else {
                     string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
                     if (!clickedNode.empty()) {
@@ -940,8 +983,7 @@ int main()
                             startNodeId = clickedNode;
                             selectingStartNode = false;
                             std::cout << "Punto de inicio seleccionado: " << startNodeId << std::endl;
-                        }
-                        else {
+                        } else {
                             endNodeId = clickedNode;
                             selectingStartNode = true;
                             std::cout << "Punto de destino seleccionado: " << endNodeId << std::endl;
@@ -951,7 +993,6 @@ int main()
             }
         }
 
-        // Actualiza el cronómetro
         if (timerRunning) {
             sf::Time elapsedTime = clock.getElapsedTime();
             std::ostringstream timerStream;
@@ -962,15 +1003,13 @@ int main()
         window.clear();
         window.draw(sprite);
 
-        // Dibujar elementos del grafo
+        // Dibujar el grafo
         drawGraph(window, graph, font);
 
-        // Dibujar la ruta original en un color diferente si existe
         if (!originalPath.empty()) {
             drawShortestPath(window, graph, originalPath, incidents, true);
         }
 
-        // Dibujar la ruta específica en azul
         if (!shortestPath.empty()) {
             drawShortestPath(window, graph, shortestPath, incidents);
             if (animateCar && pathIndex < shortestPath.size() - 1) {
@@ -990,12 +1029,10 @@ int main()
                     pathIndex++;
                     carSprite.setPosition(nextPos);
 
-                    // Verifica si el carro ha llegado al último nodo
                     if (pathIndex == shortestPath.size() - 1) {
-                        animateCar = false;  // Detiene la animación
-                        timerRunning = false; // Detiene el cronómetro
+                        animateCar = false;
+                        timerRunning = false;
 
-                        // Calcula el costo total con el tiempo transcurrido
                         elapsedTime = clock.getElapsedTime();
                         totalElapsedTime = elapsedTime.asSeconds();
 
@@ -1003,13 +1040,15 @@ int main()
                         std::ostringstream costStream;
                         costStream << std::fixed << std::setprecision(4) << totalTransportCost;
                         costText.setString("Costo total: $" + costStream.str());
+
+                        // Llamar a resetApplication después de llegar al destino
+                        resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
                     }
                 }
             }
             window.draw(carSprite);
         }
 
-        // Dibujar botones y texto
         window.draw(menuButton);
         window.draw(buttonText);
         window.draw(trafficButton);
@@ -1023,6 +1062,10 @@ int main()
         window.draw(costTextBackground);
         window.draw(costText);
         window.draw(timerText);
+
+        // Dibujar el botón de reinicio
+        window.draw(resetButton);
+        window.draw(resetButtonText);
 
         window.display();
     }
