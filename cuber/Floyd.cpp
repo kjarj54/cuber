@@ -68,7 +68,7 @@ void FloydWarshall::calculateShortestPaths() {
     }
 }
 
-std::vector<std::string> FloydWarshall::getShortestPath(const std::string& start, const std::string& end) {
+vector<std::string> FloydWarshall::getShortestPath(const std::string& start, const std::string& end, const vector<Incident>& incidents) {
     int u = nodeIndex[start];
     int v = nodeIndex[end];
 
@@ -78,7 +78,26 @@ std::vector<std::string> FloydWarshall::getShortestPath(const std::string& start
 
     std::vector<std::string> path;
     while (u != v) {
-        path.push_back(indexNode[u]);
+        std::string currentNode = indexNode[u];
+        std::string nextNodeInPath = indexNode[nextNode[u][v]];
+
+        // Verificar si la conexión actual está bloqueada por algún incidente
+        bool blocked = false;
+        for (const auto& incident : incidents) {
+            if ((incident.fromPoint == currentNode && incident.toPoint == nextNodeInPath &&
+                (incident.direction == "Ambas Direcciones" || incident.direction == "Direccion 1")) ||
+                (incident.fromPoint == nextNodeInPath && incident.toPoint == currentNode &&
+                    (incident.direction == "Ambas Direcciones" || incident.direction == "Direccion 2"))) {
+                blocked = true;
+                break;
+            }
+        }
+
+        if (blocked) {
+            return {}; // Ruta bloqueada por incidente, no hay camino válido
+        }
+
+        path.push_back(currentNode);
         u = nextNode[u][v];
     }
     path.push_back(indexNode[v]);

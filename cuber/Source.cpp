@@ -6,16 +6,22 @@
 #include "Dijkstra.h"
 #include "Floyd.h"
 #include <string>
-#include "Incident.cpp"
+#include "Incident.h"
 #include <deque>
 #include <algorithm>
 #include <iomanip>
 
 using namespace std;
 
-std::vector<Incident> incidents;
+
+std::vector<Incident> incidents = {};
+const float costPerWeight = 0.01f;
+const float costPerStop = 0.01f;
 
 float totalTransportCost = 0.0f;
+enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
+std::vector<std::string> originalPath;
+
 
 void loadVerticesFromFile(Graph& graph, const string& filename) {
     ifstream file(filename);
@@ -355,7 +361,10 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
 }
 
 
-void openIncidentWindow(Graph& graph) {
+
+// Función para abrir la ventana de incidentes y añadir uno nuevo
+void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string>& shortestPath, FloydWarshall& floydWarshall, Dijkstra& dijkstra, string startNodeId, string endNodeId, sf::Text& costText, sf::Sprite& carSprite, bool& animateCar, float costPerWeight, float costPerStop) {
+
     sf::RenderWindow incidentWindow(sf::VideoMode(400, 400), "Reportar Incidente", sf::Style::Titlebar | sf::Style::Close);
 
     bool isCoseviSelected = false;
@@ -531,6 +540,35 @@ void openIncidentWindow(Graph& graph) {
                     newIncident.type = isCoseviSelected ? "COSEVI" : "Accidente";
                     newIncident.direction = showDirectionOptions ? selectedDirection : "Ambas Direcciones";
                     incidents.push_back(newIncident);
+
+                    if (selectedAlgorithm == DIJKSTRA) {
+                        shortestPath = dijkstra.shortestPath(startNodeId, endNodeId,incidents);
+                    }
+                    else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                        shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
+                    }
+                    // Recalcular la ruta después de agregar el incidente
+                    if (selectedAlgorithm == DIJKSTRA) {
+                        shortestPath = dijkstra.shortestPath(startNodeId, endNodeId, incidents);
+                    }
+                    else if (selectedAlgorithm == FLOYD_WARSHALL) {
+                        shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
+                    }
+
+                    // Iniciar la animación del carro
+                    animateCar = true;
+                    if (!shortestPath.empty()) {
+                        Node* startNode = graph.getNode(shortestPath[0]);
+                        carSprite.setPosition(startNode->getX(), startNode->getY());
+                    }
+
+                    // Calcular el costo total del transporte y actualizar el texto
+                    float calculateTransportCost(const std::vector<std::string>&path, Graph & graph, float costPerWeight, float costPerStop);
+                    float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
+                    std::ostringstream costStream;
+                    costStream << std::fixed << std::setprecision(4) << totalTransportCost;
+                    costText.setString("Costo total: $" + costStream.str());
+
                     incidentWindow.close();
                 }
             }
@@ -587,28 +625,56 @@ void openIncidentWindow(Graph& graph) {
     }
 }
 
-void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path) {
-    float pathThickness = 5.0f; // Ajusta este valor para el grosor deseado de la línea del camino
+
+void drawShortestPath(sf::RenderWindow& window, Graph& graph, const std::vector<std::string>& path, const std::vector<Incident>& incidents, bool isOriginal = false) {
+    
 
     for (size_t i = 0; i < path.size() - 1; ++i) {
         Node* node = graph.getNode(path[i]);
         Node* nextNode = graph.getNode(path[i + 1]);
 
-        // Calcular posición inicial y final
-        sf::Vector2f start(node->getX(), node->getY());
-        sf::Vector2f end(nextNode->getX(), nextNode->getY());
-        sf::Vector2f direction = end - start;
 
-        // Calcular la longitud de la línea y crear el rectángulo para representarla
-        float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
-        sf::RectangleShape line(sf::Vector2f(length, pathThickness));
-        line.setFillColor(sf::Color::Green);
+        // Verificar si hay un incidente en la arista
+        bool isAffected = false;
+        bool isOppositeDirection = false;
+        for (const auto& incident : incidents) {
+            if ((incident.fromPoint == path[i] && incident.toPoint == path[i + 1]) ||
+                (incident.toPoint == path[i] && incident.fromPoint == path[i + 1])) {
+                isAffected = true;
+                if (incident.direction == "Direccion 1" && incident.fromPoint == path[i + 1]) {
+                    isOppositeDirection = true;
+                }
+                else if (incident.direction == "Direccion 2" && incident.fromPoint == path[i]) {
+                    isOppositeDirection = true;
+                }
+            }
+        }
 
-        // Establecer posición y rotación para que la línea se alinee entre los nodos
-        line.setPosition(start);
-        line.setRotation(std::atan2(direction.y, direction.x) * 180 / 3.14159f);
+        // Elegir color y grosor de la línea
+        sf::Color lineColor = isOriginal ? sf::Color::Cyan : sf::Color::Green;
+        if (isAffected) {
+            lineColor = isOppositeDirection ? sf::Color::Yellow : sf::Color::Red;
+        }
+        float lineThickness = isOriginal ? 3.0f : 1.0f;
 
-        window.draw(line);
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(node->getX(), node->getY()), lineColor),
+            sf::Vertex(sf::Vector2f(nextNode->getX(), nextNode->getY()), lineColor)
+        };
+
+        // Dibujar la línea con mayor grosor si es la ruta original
+        if (isOriginal) {
+            for (int j = -1; j <= 1; j++) {
+                sf::Vertex thickLine[] = {
+                    sf::Vertex(sf::Vector2f(node->getX() + j, node->getY() + j), lineColor),
+                    sf::Vertex(sf::Vector2f(nextNode->getX() + j, nextNode->getY() + j), lineColor)
+                };
+                window.draw(thickLine, 2, sf::Lines);
+            }
+        }
+        else {
+            window.draw(line, 2, sf::Lines);
+        }
     }
 }
 
@@ -692,6 +758,7 @@ int main()
     const unsigned int fixedWidth = 1280;
     const unsigned int fixedHeight = 720;
     window.create(sf::VideoMode(fixedWidth, fixedHeight), "SFML Fixed Size Window", sf::Style::Close);
+    bool originalPathSet = false;
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
@@ -722,11 +789,10 @@ int main()
 
     string startNodeId, endNodeId;
     bool selectingStartNode = true;
-    std::vector<std::string> shortestPath;
+    vector<string> shortestPath;
     size_t pathIndex = 0;
     bool animateCar = false;
 
-    enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
     Algorithm selectedAlgorithm = DIJKSTRA;
 
     // Texto y fondo para el costo
@@ -814,8 +880,10 @@ int main()
                 float mouseX = event.mouseButton.x;
                 float mouseY = event.mouseButton.y;
 
-                if (menuButton.getGlobalBounds().contains(mouseX, mouseY)) {
-                    openIncidentWindow(graph);
+                if (menuButton.getGlobalBounds().contains(mouseX, mouseY))
+                {
+                    openIncidentWindow(graph, selectedAlgorithm, shortestPath, floydWarshall, dijkstra, startNodeId, endNodeId, costText, carSprite, animateCar, costPerWeight, costPerStop);
+
                 }
                 if (trafficButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     openTrafficWindow(graph, floydWarshall);
@@ -844,14 +912,20 @@ int main()
                 else if (startButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
-                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
+                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId, incidents);
                         }
                         else if (selectedAlgorithm == FLOYD_WARSHALL) {
-                            floydWarshall.updateMatrices(); // Asegúrate de que la matriz esté actualizada
-                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
+
+                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
+
                         }
                         pathIndex = 0;
                         animateCar = true;
+
+                        if (!shortestPath.empty() && !originalPathSet) {
+                            originalPath = shortestPath; // Guardar la ruta original solo la primera vez
+                            originalPathSet = true;
+                        }
 
                         if (!shortestPath.empty()) {
                             Node* startNode = graph.getNode(shortestPath[0]);
@@ -895,10 +969,14 @@ int main()
         // Dibujar elementos del grafo
         drawGraph(window, graph, font);
 
+        // Dibujar la ruta original en un color diferente si existe
+        if (!originalPath.empty()) {
+            drawShortestPath(window, graph, originalPath, incidents, true);
+        }
+
         // Dibujar la ruta específica en azul
         if (!shortestPath.empty()) {
-            drawShortestPath(window, graph, shortestPath);
-
+            drawShortestPath(window, graph, shortestPath, incidents);
             if (animateCar && pathIndex < shortestPath.size() - 1) {
                 Node* currentNode = graph.getNode(shortestPath[pathIndex]);
                 Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
