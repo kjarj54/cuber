@@ -363,7 +363,7 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
 
 
 // Función para abrir la ventana de incidentes y añadir uno nuevo
-void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string>& shortestPath, FloydWarshall& floydWarshall, Dijkstra& dijkstra, string startNodeId, string endNodeId, sf::Text& costText, sf::Sprite& carSprite, bool& animateCar, float costPerWeight, float costPerStop) {
+void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string>& shortestPath, FloydWarshall& floydWarshall, Dijkstra& dijkstra, string startNodeId, string endNodeId, sf::Text& costText, sf::Sprite& carSprite, bool& animateCar) {
 
     sf::RenderWindow incidentWindow(sf::VideoMode(400, 400), "Reportar Incidente", sf::Style::Titlebar | sf::Style::Close);
 
@@ -562,13 +562,6 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
                         carSprite.setPosition(startNode->getX(), startNode->getY());
                     }
 
-                    // Calcular el costo total del transporte y actualizar el texto
-                    float calculateTransportCost(const std::vector<std::string>&path, Graph & graph, float costPerWeight, float costPerStop);
-                    float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop);
-                    std::ostringstream costStream;
-                    costStream << std::fixed << std::setprecision(4) << totalTransportCost;
-                    costText.setString("Costo total: $" + costStream.str());
-
                     incidentWindow.close();
                 }
             }
@@ -759,6 +752,8 @@ int main()
     const unsigned int fixedHeight = 720;
     window.create(sf::VideoMode(fixedWidth, fixedHeight), "SFML Fixed Size Window", sf::Style::Close);
     bool originalPathSet = false;
+    sf::Time elapsedTime;
+    float totalElapsedTime;
 
     sf::Sprite sprite;
     sprite.setTexture(texture);
@@ -882,7 +877,7 @@ int main()
 
                 if (menuButton.getGlobalBounds().contains(mouseX, mouseY))
                 {
-                    openIncidentWindow(graph, selectedAlgorithm, shortestPath, floydWarshall, dijkstra, startNodeId, endNodeId, costText, carSprite, animateCar, costPerWeight, costPerStop);
+                    openIncidentWindow(graph, selectedAlgorithm, shortestPath, floydWarshall, dijkstra, startNodeId, endNodeId, costText, carSprite, animateCar);
 
                 }
                 if (trafficButton.getGlobalBounds().contains(mouseX, mouseY)) {
@@ -893,10 +888,10 @@ int main()
                     // Recalcula la ruta más corta tras la actualización de matrices
                     if (!startNodeId.empty() && !endNodeId.empty()) {
                         if (selectedAlgorithm == DIJKSTRA) {
-                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId);
+                            shortestPath = dijkstra.shortestPath(startNodeId, endNodeId, incidents);
                         }
                         else if (selectedAlgorithm == FLOYD_WARSHALL) {
-                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId);
+                            shortestPath = floydWarshall.getShortestPath(startNodeId, endNodeId, incidents);
                         }
                         std::cout << "Ruta recalculada después de ajuste de tráfico." << std::endl;
                     }
@@ -1000,8 +995,8 @@ int main()
                         timerRunning = false; // Detiene el cronómetro
 
                         // Calcula el costo total con el tiempo transcurrido
-                        sf::Time elapsedTime = clock.getElapsedTime();
-                        float totalElapsedTime = elapsedTime.asSeconds();
+                        elapsedTime = clock.getElapsedTime();
+                        totalElapsedTime = elapsedTime.asSeconds();
 
                         float totalTransportCost = calculateTransportCost(shortestPath, graph, costPerWeight, costPerStop, totalElapsedTime);
                         std::ostringstream costStream;
