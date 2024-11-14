@@ -1054,7 +1054,7 @@ int main()
                     std::cout << "Conexión bloqueada en ambas direcciones entre " << shortestPath[pathIndex]
                         << " y " << shortestPath[pathIndex + 1] << ". Animación detenida." << std::endl;
                 }
-                else {
+                else if (currentNode && nextNode) { // Validar nodos para evitar problemas
                     // Continuar la animación si la conexión no está bloqueada
                     sf::Vector2f currentPos(currentNode->getX(), currentNode->getY());
                     sf::Vector2f nextPos(nextNode->getX(), nextNode->getY());
@@ -1087,6 +1087,11 @@ int main()
                             resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
                         }
                     }
+                }
+                else {
+                    // Si algún nodo es inválido, detener la animación y mostrar advertencia
+                    animateCar = false;
+                    std::cerr << "Error: Nodo inválido en la ruta. Animación detenida." << std::endl;
                 }
             }
             window.draw(carSprite);

@@ -16,8 +16,8 @@ public:
     void calculateShortestPaths();
 
     // Actualiza las matrices de distancia y de nodo siguiente después de un cambio en los pesos
-    void updateMatrices(); // <-- Declaración del método updateMatrices aquí
-
+    void updateMatrices(const std::vector<Incident>& incidents); // <-- Declaración del método updateMatrices aquí
+    void updateMatrices();
     // Obtiene el camino más corto entre dos nodos específicos
     std::vector<std::string> getShortestPath(const std::string& start, const std::string& end, const vector<Incident>& incidents);
 
