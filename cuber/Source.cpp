@@ -22,6 +22,8 @@ const float costPerStop = 0.01f;
 float totalTransportCost = 0.0f;
 enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
 std::vector<std::string> originalPath;
+sf::Color startNodeColor = sf::Color::Green;  // Color del nodo de inicio
+sf::Color endNodeColor = sf::Color::Blue;     // Color del nodo de destino
 
 
 void loadVerticesFromFile(Graph& graph, const string& filename) {
@@ -126,14 +128,25 @@ void loadGraphFromFile(Graph& graph, const std::string& filename) {
     file.close();
 }
 
-void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
+void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font, const std::string& startNodeId, const std::string& endNodeId) {
     for (const auto& vertex : graph.getVertices()) {
         Node* node = graph.getNode(vertex);
         auto neighbors = graph.getNeighbors(vertex);
 
         // Dibujar el nodo
         sf::CircleShape shape(10);
-        shape.setFillColor(sf::Color::Red);
+
+        // Cambia el color del nodo si es el de inicio o el de destino
+        if (node->getId() == startNodeId) {
+            shape.setFillColor(startNodeColor);
+        }
+        else if (node->getId() == endNodeId) {
+            shape.setFillColor(endNodeColor);
+        }
+        else {
+            shape.setFillColor(sf::Color::Red);  // Color predeterminado
+        }
+
         shape.setPosition(node->getX(), node->getY());
         window.draw(shape);
 
@@ -155,13 +168,9 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             std::tie(neighborId, weight, isBidirectional) = neighbor;
             Node* neighborNode = graph.getNode(neighborId);
 
-            // Asegurarse de obtener el peso actualizado de la arista entre el nodo actual y el vecino
             double updatedWeight = graph.getEdgeWeight(vertex, neighborId);
-
-            // Determinar el color de la arista
             sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
 
-            // Calcular la posición y la longitud de la línea
             sf::Vector2f start(node->getX(), node->getY());
             sf::Vector2f end(neighborNode->getX(), neighborNode->getY());
             sf::Vector2f direction = end - start;
@@ -169,24 +178,18 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             float length = sqrt(direction.x * direction.x + direction.y * direction.y);
             float thickness = 1.5f;
 
-            // Crear un rectángulo para la línea con el grosor deseado
             sf::RectangleShape line(sf::Vector2f(length, thickness));
             line.setFillColor(lineColor);
             line.setPosition(start);
-
-            // Rotar el rectángulo para que apunte hacia el nodo vecino
             line.setRotation(atan2(direction.y, direction.x) * 180 / 3.14159265f);
 
-            // Dibujar la línea como un rectángulo
             window.draw(line);
 
-            // Calcular la posición del texto del peso en el medio de la arista
             float midX = (node->getX() + neighborNode->getX()) / 2;
             float midY = (node->getY() + neighborNode->getY()) / 2;
 
-            // Crear y configurar el texto para mostrar el peso actualizado con menos decimales
             std::ostringstream weightStream;
-            weightStream << std::fixed << std::setprecision(1) << updatedWeight; // Una posición decimal
+            weightStream << std::fixed << std::setprecision(1) << updatedWeight;
 
             sf::Text weightText;
             weightText.setFont(font);
@@ -195,9 +198,7 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             weightText.setFillColor(sf::Color::Black);
             weightText.setPosition(midX, midY);
 
-            // Dibujar el texto del peso
             window.draw(weightText);
-
         }
     }
 }
@@ -1023,7 +1024,7 @@ int main()
                 // Verificar si se presionó el botón de reinicio
                 else if (resetButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, true, timerText);
-                    drawGraph(window, graph, font);
+                    drawGraph(window, graph, font, startNodeId, endNodeId);
                 }
                 else {
                     string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
@@ -1053,7 +1054,7 @@ int main()
         window.draw(sprite);
 
         // Dibujar el grafo
-        drawGraph(window, graph, font);
+        drawGraph(window, graph, font, startNodeId, endNodeId);
 
         if (!originalPath.empty()) {
             drawShortestPath(window, graph, originalPath, incidents, true);
@@ -1116,7 +1117,7 @@ int main()
 
                             // Llamar a resetApplication después de llegar al destino
                             resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
-                            drawGraph(window, graph, font);
+                            drawGraph(window, graph, font, startNodeId, endNodeId);
                         }
                     }
                 }
