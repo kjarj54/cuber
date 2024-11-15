@@ -166,3 +166,13 @@ Graph::~Graph() {
         delete it->second;
     }
 }
+
+void Graph::clear() {
+    for (auto it = nodes.begin(); it != nodes.end(); ++it) {
+        delete it->second;
+    }
+    nodes.clear();
+}
+
+
+

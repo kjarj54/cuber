@@ -18,6 +18,7 @@ std::vector<Incident> incidents = {};
 const float costPerWeight = 0.05f;
 const float costPerStop = 0.01f;
 
+    size_t pathIndex = 0;
 float totalTransportCost = 0.0f;
 enum Algorithm { DIJKSTRA, FLOYD_WARSHALL };
 std::vector<std::string> originalPath;
@@ -603,12 +604,13 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
                     }
 
                     // Iniciar la animación del carro
-                    animateCar = true;
+                  
+                    pathIndex = 0;
                     if (!shortestPath.empty()) {
                         Node* startNode = graph.getNode(shortestPath[0]);
                         carSprite.setPosition(startNode->getX(), startNode->getY());
                     }
-
+                    animateCar = true;
                     incidentWindow.close();
                 }
             }
@@ -659,9 +661,9 @@ void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string
             incidentWindow.draw(bothDirectionsButton);
             incidentWindow.draw(bothDirectionsText);
         }
-
-        incidentWindow.draw(confirmButtonText);
         incidentWindow.draw(confirmButton);
+        incidentWindow.draw(confirmButtonText);
+        
 
         incidentWindow.display();
     }
@@ -820,6 +822,9 @@ void resetApplication(Graph& graph, sf::Text& costText, std::vector<std::string>
     selectedAlgorithm = DIJKSTRA;
     // Reiniciar los incidentes puestos anteriormente
     incidents = {};
+ 
+
+    
 }
 
 int main()
@@ -869,7 +874,6 @@ int main()
     string startNodeId, endNodeId;
     bool selectingStartNode = true;
     vector<string> shortestPath;
-    size_t pathIndex = 0;
     bool animateCar = false;
 
     Algorithm selectedAlgorithm = DIJKSTRA;
@@ -1019,6 +1023,7 @@ int main()
                 // Verificar si se presionó el botón de reinicio
                 else if (resetButton.getGlobalBounds().contains(mouseX, mouseY)) {
                     resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, true, timerText);
+                    drawGraph(window, graph, font);
                 }
                 else {
                     string clickedNode = findNodeAtPosition(graph, mouseX, mouseY);
@@ -1111,6 +1116,7 @@ int main()
 
                             // Llamar a resetApplication después de llegar al destino
                             resetApplication(graph, costText, shortestPath, originalPath, pathIndex, animateCar, timerRunning, clock, totalElapsedTime, carSprite, startNodeId, endNodeId, selectingStartNode, selectedAlgorithm, false, timerText);
+                            drawGraph(window, graph, font);
                         }
                     }
                 }
