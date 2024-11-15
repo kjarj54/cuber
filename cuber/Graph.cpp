@@ -10,16 +10,38 @@ void Graph::addNode(const string& id, float x, float y) {
     }
 }
 
-void Graph::addEdge(const string& src, const string& dest, double weight, bool isBidirectional) {
+
+void Graph::addEdge(const std::string& src, const std::string& dest, double weight, bool isBidirectional) {
     if (nodes.find(src) == nodes.end() || nodes.find(dest) == nodes.end()) {
         return;
     }
+
+    // Agrega la arista al grafo
     nodes[src]->addNeighbor(dest, weight, isBidirectional);
     if (isBidirectional || !directed) {
         nodes[dest]->addNeighbor(src, weight, isBidirectional);
     }
+
+    // Almacena el peso original si aún no está en el mapa
+    if (originalEdges.find({ src, dest }) == originalEdges.end()) {
+        originalEdges[{src, dest}] = weight;
+    }
+    if ((isBidirectional || !directed) && originalEdges.find({ dest, src }) == originalEdges.end()) {
+        originalEdges[{dest, src}] = weight;
+    }
 }
 
+
+void Graph::resetEdgeWeights() {
+    for (const auto& edge : originalEdges) {
+        const auto& src = edge.first.first;
+        const auto& dest = edge.first.second;
+        double originalWeight = edge.second;
+
+        // Actualiza el peso de la arista al valor original
+        updateEdgeWeight(src, dest, originalWeight);
+    }
+}
 
 
 

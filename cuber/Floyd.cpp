@@ -90,7 +90,7 @@ void FloydWarshall::calculateShortestPaths() {
 
 vector<std::string> FloydWarshall::getShortestPath(const std::string& start, const std::string& end, const vector<Incident>& incidents) {
     updateMatrices(incidents); // Recalcula la matriz con los incidentes
-
+    updateMatrices();
     int u = nodeIndex[start];
     int v = nodeIndex[end];
 
@@ -110,6 +110,7 @@ vector<std::string> FloydWarshall::getShortestPath(const std::string& start, con
 
 void FloydWarshall::updateMatrices() {
     int n = graph->getVertices().size();
+    std::cout << "Inicializando matrices de distancias y nodos...\n";
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             distMatrix[i][j] = (i == j) ? 0 : std::numeric_limits<double>::infinity();
@@ -117,6 +118,7 @@ void FloydWarshall::updateMatrices() {
         }
     }
 
+    std::cout << "Rellenando matrices con los pesos actualizados del grafo...\n";
     for (const auto& vertex : graph->getVertices()) {
         int u = nodeIndex[vertex];
         for (const auto& neighbor : graph->getNeighbors(vertex)) {
@@ -126,14 +128,24 @@ void FloydWarshall::updateMatrices() {
             std::tie(neighborId, weight, isBidirectional) = neighbor;
 
             int v = nodeIndex[neighborId];
-            distMatrix[u][v] = weight;
+
+            // Obtén siempre el peso actualizado desde el grafo
+            double updatedWeight = graph->getEdgeWeight(vertex, neighborId);
+
+
+            distMatrix[u][v] = updatedWeight;
             nextNode[u][v] = v;
 
             if (isBidirectional) {
-                distMatrix[v][u] = weight;
+                distMatrix[v][u] = updatedWeight;
                 nextNode[v][u] = u;
             }
+
+            std::cout << "Arista " << vertex << " -> " << neighborId
+                << " con peso actualizado " << updatedWeight
+                << (isBidirectional ? " (bidireccional)" : "") << "\n";
         }
     }
+
     calculateShortestPaths(); // Recalcula los caminos más cortos con la matriz actualizada
 }

@@ -15,7 +15,7 @@ using namespace std;
 
 
 std::vector<Incident> incidents = {};
-const float costPerWeight = 0.01f;
+const float costPerWeight = 0.05f;
 const float costPerStop = 0.01f;
 
 float totalTransportCost = 0.0f;
@@ -140,19 +140,22 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
         sf::Text text;
         text.setFont(font);
         text.setString(std::to_string(std::stoi(node->getId().substr(4))));
-        text.setCharacterSize(12);  // Tamaño reducido del ID del nodo
+        text.setCharacterSize(12);
         text.setFillColor(sf::Color::Black);
         text.setPosition(node->getX(), node->getY());
         window.draw(text);
 
         // Dibujar las conexiones (aristas) entre el nodo y sus vecinos
         for (const auto& neighbor : neighbors) {
-            string neighborId;
+            std::string neighborId;
             double weight;
             bool isBidirectional;
 
             std::tie(neighborId, weight, isBidirectional) = neighbor;
             Node* neighborNode = graph.getNode(neighborId);
+
+            // Asegurarse de obtener el peso actualizado de la arista entre el nodo actual y el vecino
+            double updatedWeight = graph.getEdgeWeight(vertex, neighborId);
 
             // Determinar el color de la arista
             sf::Color lineColor = isBidirectional ? sf::Color::Magenta : sf::Color::Blue;
@@ -163,7 +166,7 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             sf::Vector2f direction = end - start;
 
             float length = sqrt(direction.x * direction.x + direction.y * direction.y);
-            float thickness = 1.5f; // Ancho de la línea
+            float thickness = 1.5f;
 
             // Crear un rectángulo para la línea con el grosor deseado
             sf::RectangleShape line(sf::Vector2f(length, thickness));
@@ -180,43 +183,53 @@ void drawGraph(sf::RenderWindow& window, Graph& graph, sf::Font& font) {
             float midX = (node->getX() + neighborNode->getX()) / 2;
             float midY = (node->getY() + neighborNode->getY()) / 2;
 
-            // Crear y configurar el texto para mostrar el peso con menos decimales
+            // Crear y configurar el texto para mostrar el peso actualizado con menos decimales
             std::ostringstream weightStream;
-            weightStream << std::fixed << std::setprecision(1) << weight; // Una posición decimal
+            weightStream << std::fixed << std::setprecision(1) << updatedWeight; // Una posición decimal
 
             sf::Text weightText;
             weightText.setFont(font);
             weightText.setString(weightStream.str());
-            weightText.setCharacterSize(12);  // Tamaño reducido del texto del peso
+            weightText.setCharacterSize(12);
             weightText.setFillColor(sf::Color::Black);
             weightText.setPosition(midX, midY);
 
             // Dibujar el texto del peso
             window.draw(weightText);
+
         }
     }
 }
 
+
 void adjustTraffic(Graph& graph, FloydWarshall& floydWarshall, const std::string& src, const std::string& dest, int trafficLevel) {
-    // Obtén el peso actual de la arista antes de ajustarlo
-    double currentWeight = graph.getEdgeWeight(src, dest);
-    if (currentWeight <= 0) {
+    // Obtén el peso actual de la arista en ambas direcciones
+    double currentWeightSrcDest = graph.getEdgeWeight(src, dest);
+    double currentWeightDestSrc = graph.getEdgeWeight(dest, src);
+
+    if (currentWeightSrcDest <= 0 || currentWeightDestSrc <= 0) {
         std::cerr << "Error: no se encontró el peso de la arista entre " << src << " y " << dest << std::endl;
         return;
     }
 
     // Calcula el nuevo peso multiplicando el peso actual por el nivel de tráfico
-    double newWeight = currentWeight * trafficLevel;
-    graph.updateEdgeWeight(src, dest, newWeight);
+    double newWeightSrcDest = currentWeightSrcDest * trafficLevel;
+    double newWeightDestSrc = currentWeightDestSrc * trafficLevel;
 
-    std::cout << "Nuevo peso para la arista " << src << " -> " << dest << ": " << newWeight << std::endl;
+    // Actualiza el peso en ambas direcciones
+    graph.updateEdgeWeight(src, dest, newWeightSrcDest);
+    graph.updateEdgeWeight(dest, src, newWeightDestSrc);
+
+    std::cout << "Nuevo peso para la arista " << src << " -> " << dest << ": " << newWeightSrcDest << std::endl;
+    std::cout << "Nuevo peso para la arista " << dest << " -> " << src << ": " << newWeightDestSrc << std::endl;
 
     // Actualiza las matrices de Floyd-Warshall para reflejar el nuevo peso
     floydWarshall.updateMatrices();  // Asegúrate de que `updateMatrices` esté implementado en FloydWarshall
 }
 
+
 void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
-    sf::RenderWindow trafficWindow(sf::VideoMode(350, 250), "Ajustar Tráfico", sf::Style::Titlebar | sf::Style::Close);
+    sf::RenderWindow trafficWindow(sf::VideoMode(350, 300), "Ajustar Tráfico", sf::Style::Titlebar | sf::Style::Close);
 
     sf::Font font;
     if (!font.loadFromFile("arial.ttf")) {
@@ -224,7 +237,7 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
         return;
     }
 
-    // Botones de selección de tráfico y configuración de cuadros de texto
+    // Botones para ajustar el tráfico
     sf::RectangleShape normalTrafficButton(sf::Vector2f(100, 50));
     normalTrafficButton.setFillColor(sf::Color::Green);
     normalTrafficButton.setPosition(200, 60);
@@ -248,6 +261,15 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
     sf::Text slowText("Lento", font, 18);
     slowText.setFillColor(sf::Color::Black);
     slowText.setPosition(215, 190);
+
+    // Botón de "Restablecer Tráfico"
+    sf::RectangleShape resetTrafficButton(sf::Vector2f(150, 50));
+    resetTrafficButton.setFillColor(sf::Color::Blue);
+    resetTrafficButton.setPosition(100, 240);
+
+    sf::Text resetText("Restablecer Tráfico", font, 18);
+    resetText.setFillColor(sf::Color::White);
+    resetText.setPosition(110, 250);
 
     // Etiquetas y cuadros de texto para "Desde" y "Hasta" puntos
     sf::Text fromLabel("Desde:", font, 18);
@@ -289,17 +311,24 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (normalTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
                     adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 1);
-                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
+                    floydWarshall.updateMatrices();
                     trafficWindow.close();
                 }
                 else if (moderateTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
                     adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 2);
-                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
+                    floydWarshall.updateMatrices();
                     trafficWindow.close();
                 }
                 else if (slowTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y) && !fromStr.empty() && !toStr.empty()) {
                     adjustTraffic(graph, floydWarshall, "Node" + fromStr, "Node" + toStr, 3);
-                    floydWarshall.updateMatrices(); // Actualiza la matriz después de cada ajuste
+                    floydWarshall.updateMatrices();
+                    trafficWindow.close();
+                }
+                else if (resetTrafficButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                    // Llama al método `resetEdgeWeights` para restablecer los pesos originales
+                    graph.resetEdgeWeights();
+                    floydWarshall.updateMatrices();  // Asegúrate de que Floyd-Warshall actualice sus matrices
+                    std::cout << "Pesos de tráfico restablecidos a los valores originales." << std::endl;
                     trafficWindow.close();
                 }
                 else if (fromBox.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
@@ -356,9 +385,14 @@ void openTrafficWindow(Graph& graph, FloydWarshall& floydWarshall) {
         trafficWindow.draw(slowTrafficButton);
         trafficWindow.draw(slowText);
 
+        // Dibujar el botón de restablecer tráfico
+        trafficWindow.draw(resetTrafficButton);
+        trafficWindow.draw(resetText);
+
         trafficWindow.display();
     }
 }
+
 
 // Función para abrir la ventana de incidentes y añadir uno nuevo
 void openIncidentWindow(Graph& graph, Algorithm selectedAlgorithm, vector<string>& shortestPath, FloydWarshall& floydWarshall, Dijkstra& dijkstra, string startNodeId, string endNodeId, sf::Text& costText, sf::Sprite& carSprite, bool& animateCar) {
@@ -882,9 +916,6 @@ int main()
     timerText.setPosition(10, 10);
     bool timerRunning = false;
 
-    float costPerWeight = 0.5f; // Valor por unidad de distancia
-    float costPerStop = 1.0f;   // Valor por cada nodo de detención
-
     // Crear botón de "Incidentes"
     sf::RectangleShape menuButton(sf::Vector2f(100, 50));
     menuButton.setFillColor(sf::Color::Green);
@@ -904,7 +935,7 @@ int main()
     trafficButton.setFillColor(sf::Color::Yellow);
     trafficButton.setPosition(fixedWidth - 110, 70);
 
-    sf::Text trafficButtonText("Tráfico", font, 20);
+    sf::Text trafficButtonText("Trafico", font, 20);
     trafficButtonText.setFillColor(sf::Color::Black);
     sf::FloatRect trafficTextRect = trafficButtonText.getLocalBounds();
     trafficButtonText.setOrigin(trafficTextRect.left + trafficTextRect.width / 2.0f, trafficTextRect.top + trafficTextRect.height / 2.0f);
@@ -1030,6 +1061,7 @@ int main()
             if (animateCar && pathIndex < shortestPath.size() - 1) {
                 Node* currentNode = graph.getNode(shortestPath[pathIndex]);
                 Node* nextNode = graph.getNode(shortestPath[pathIndex + 1]);
+
 
                 // Verificar si la conexión actual está afectada por un incidente en ambas direcciones
                 bool isConnectionBlocked = false;
